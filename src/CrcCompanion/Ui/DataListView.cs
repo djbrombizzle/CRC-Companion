@@ -20,7 +20,7 @@ namespace CrcCompanion.Ui
         string? NearestFix(LatLon p, double maxNm);
         bool IsAirportId(string id);
         Pilot? FindPilot(string callsign);
-        /// <summary>GROUP SUP entries: codes hidden from the CODE and UA views.</summary>
+        /// <summary>GROUP SUP entries: codes hidden from the CODE view.</summary>
         IReadOnlyList<string> SuppressedGroups { get; }
         /// <summary>vUSAlink hub CPDLC log for your ARTCC (CPDLC views).</summary>
         CpdlcLog Cpdlc { get; }
@@ -34,6 +34,12 @@ namespace CrcCompanion.Ui
         int MrpVersion { get; }
         /// <summary>A program's sequence with current traffic; <paramref name="localOrder"/> overrides its order.</summary>
         FcaSequence Sequence(FcaProgram fca, IReadOnlyList<string>? localOrder);
+        /// <summary>UA messages: GI (vUSAlink EDST), TMU (VATFLOW Airport TMU) and FLOW (VATFLOW FCAs) for your ARTCC.</summary>
+        UaQueue UpdateArea { get; }
+        /// <summary>Sources that aren't answering ("HUB DOWN", "VATFLOW TMU DOWN", "NO GI FROM HUB"), or "".</summary>
+        string UaStatus { get; }
+        /// <summary>CRC CID and owning sector the vUSALink EDST app learned from a QF, or null.</summary>
+        EdstCidBook.Entry? EdstCid(string callsign);
     }
 
     /// <summary>One body line: a heading (spaced like a WX report break) or an entry.</summary>

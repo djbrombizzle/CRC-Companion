@@ -167,6 +167,8 @@ internal static class Program
         GridTests.Run(Check, (n, e, a) => Check(n, Equals(e, a), $"expected [{e}] got [{a}]"));
         CpdlcTests.Run(Check, (n, e, a) => Check(n, Equals(e, a), $"expected [{e}] got [{a}]"));
         StripListTests.Run(Check, (n, e, a) => Check(n, Equals(e, a), $"expected [{e}] got [{a}]"));
+        CfrTests.Run(Check, (n, e, a) => Check(n, Equals(e, a), $"expected [{e}] got [{a}]"));
+        UaTests.Run(Check, (n, e, a) => Check(n, Equals(e, a), $"expected [{e}] got [{a}]"));
         FcaTests.Run(Check, (n, e, a) => Check(n, Equals(e, a), $"expected [{e}] got [{a}]"));
 
         Console.WriteLine($"\n{_pass} passed, {_fail} failed");

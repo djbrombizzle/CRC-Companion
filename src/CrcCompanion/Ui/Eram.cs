@@ -36,6 +36,8 @@ namespace CrcCompanion.Ui
         public static readonly Brush NonRvsm = Solid(0xE0, 0x5A, 0x50);
         /// <summary>MRP menu RESEQ / DELETE: blue when available, burnt coral when on.</summary>
         public static readonly Brush MrpBlue = Solid(0x00, 0x9C, 0xDC);
+        /// <summary>CFR: a newly displayed readout's FLID.</summary>
+        public static readonly Brush CfrGreen = Solid(0x00, 0xC8, 0x00);
         public static readonly Brush MrpCoral = Solid(0xD0, 0x6E, 0x64);
 
         // Menus

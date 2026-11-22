@@ -16,6 +16,9 @@ namespace CrcCompanion.Ui
         protected CpdlcView(IViewHost h, ViewSettings s, string title, ILiveSource l) : base(h, s, title, l) { }
 
         protected CpdlcLog Log => Live.Cpdlc;
+
+        /// <summary>The CRC CID from the vUSALink EDST app (learned from a QF), padded for the CID column.</summary>
+        protected string CidText(string callsign) => Fit(Live.EdstCid(callsign)?.Cid ?? "", 3) + " ";
         /// <summary>Message text width in characters (M → TEXT).</summary>
         protected int TextChars => Math.Max(TextMin, Settings.RouteChars);
         private const int TextMin = 12;
@@ -110,7 +113,7 @@ namespace CrcCompanion.Ui
     /// first, with a scroll bar. A down arrow between TIME and ORG marks a pilot-initiated downlink.
     /// Click the FLID box and type a callsign to filter (Enter; an empty Enter clears it). DEL ALL removes the
     /// listed messages from the view (M → RESTORE brings them back). Click a message for its full text, Due To
-    /// Reason and DELETE. CID and ORG stay blank: the vUSAlink hub doesn't report ERAM CIDs or sectors.
+    /// Reason and DELETE. CID comes from the vUSALink EDST app (learned from CRC QF readouts); ORG stays blank.
     /// </summary>
     public sealed class CpdlcHistView : CpdlcView
     {
@@ -159,8 +162,8 @@ namespace CrcCompanion.Ui
         public static string HeaderText(int textChars) => "CID ACID    " + Fit("MSG CONTENT", textChars) + " STAT TIME   ORG";
 
         /// <summary>One entry's text, columns as in ERAM (CID and ORG blank; the PID arrow is drawn separately).</summary>
-        public static string RowText(HistoryRow r, int textChars) =>
-            "    " + Fit(r.Message.Callsign, 8) + CpdlcText.Truncate(CpdlcText.Abbreviate(r.Message.Text), textChars) + " " + Fit(r.StatText, 5) + Hhmm(r.Message.Utc);
+        public static string RowText(HistoryRow r, int textChars, string cid = "    ") =>
+            cid + Fit(r.Message.Callsign, 8) + CpdlcText.Truncate(CpdlcText.Abbreviate(r.Message.Text), textChars) + " " + Fit(r.StatText, 5) + Hhmm(r.Message.Utc);
 
         private int LineChars => 4 + 8 + TextChars + 1 + 5 + 4 + 6;
         /// <summary>Column of the PID arrow (between TIME and ORG).</summary>
@@ -229,7 +232,7 @@ namespace CrcCompanion.Ui
                 {
                     var r = rows[_scroll + v];
                     double ry = top + v * rowH;
-                    p.Text(RowText(r, TextChars), x0 + LeftPad, ry + gt, m, tb);
+                    p.Text(RowText(r, TextChars, CidText(r.Message.Callsign)), x0 + LeftPad, ry + gt, m, tb);
                     if (r.Pid)
                     {
                         // Filled down arrow about a capital's height, centred in its column.
@@ -336,7 +339,7 @@ namespace CrcCompanion.Ui
     /// errors (UNA, TIM) that stay until acknowledged, and a NORMAL AREA (SNT, STBY and dimmed closed messages)
     /// with ACID / STAT / TIME sort and MSG FILTER. Click a message to see its full text; click an error's status
     /// for ACKNOWLEDGE (moves it to the normal area) or ACKNOWLEDGE+DELETE. CLEANUP removes closed messages.
-    /// CID and ORG stay blank: the vUSAlink hub doesn't report ERAM CIDs or sectors.
+    /// CID comes from the vUSALink EDST app (learned from CRC QF readouts); ORG stays blank.
     /// </summary>
     public sealed class CpdlcMsgoutView : CpdlcView
     {
@@ -510,7 +513,7 @@ namespace CrcCompanion.Ui
                 {
                     var color = !special && r.Closed ? dim : TextBrush;
                     var content = CpdlcText.Abbreviate(r.Uplink.Text);
-                    var line = "    " + Fit(r.Uplink.Callsign, 8) + CpdlcText.Truncate(content, TextChars) + " " +
+                    var line = CidText(r.Uplink.Callsign) + Fit(r.Uplink.Callsign, 8) + CpdlcText.Truncate(content, TextChars) + " " +
                                Fit("", 6) + Hhmm(r.Uplink.Utc);
                     p.Text(line, tx, ry + gt, m, color);
 

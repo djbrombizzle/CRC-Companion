@@ -25,7 +25,7 @@ Each opens from its VIEWS button and has the usual M menu (O/T, BORDER, LINES, F
 | View | Shows | M menu extras |
 |---|---|---|
 | AUTO HO INHIB | Flights you list, with type, altitude and IN/OUT/OFF (in your ARTCC, outside, offline). Click to delete. | ENTRY |
-| CFR | Call for release: departures waiting at the airports you list. Click a flight to cycle REL (time stamped), HOLD, cleared. | PREFILE, AIRPORTS |
+| CFR | Continuous Flight Plan Readout: up to ten flight plans, kept up to date. See below. | ENTRIES, RTE, FILTERS |
 | CODE | Beacon Code View: codes of airborne targets in your ARTCC plus codes added with QB (shown with a period), in columns. Click a code to see who's squawking it. | COL, SORT MAN, QB |
 | CONFLCT ALERT | Pairs losing separation now (`NOW`) or within 4 minutes (`E2` = in 2 min): lateral NM and vertical hundreds of feet. Vertical rate comes from recent polls. Pairs both close to the same airport are skipped. | NM (lateral minimum, default 5) |
 | CRR | Continuous range readout groups: each aircraft's distance (NM) to the group's location. Entry works like CRC's LF: `BOS`, `BOS090010 E10`, `//4220N/7110W NORTH AAL1`, `BOS AAL1/DAL2` (toggles), `-E10`. Middle-click a group label to delete its aircraft or the group. | LF |
@@ -34,9 +34,45 @@ Each opens from its VIEWS button and has the usual M menu (O/T, BORDER, LINES, F
 | HOLD LIST | Flights detected holding (a full turn within 10 NM over 8 minutes), marked `H`, plus holds you enter as `ACID [FIX] [EFC]`. Shows altitude, fix (nearest fix if detected), EFC and minutes holding. | AUTO, ENTRY |
 | MRP LIST | ERAM's Meter Reference Point view, fed by VATFLOW's FCA programs for your ARTCC. See "MRP (VATFLOW FCAs)" below. | RESEQ, SPEED, DELETE, COLOR, sublists |
 | SAA FILTER | Special activity airspaces you list. Click to switch ON/OFF, middle-click to delete. | ENTRY, ALL ON, ALL OFF |
-| UA | Airborne targets in your ARTCC with no flight plan, with altitude, code and position from the nearest airport | |
+| UA | Update Area: GI notes from the vUSAlink EDST, and VATFLOW Airport TMU and FCA changes for your ARTCC. See below. | MSG WAIT, TEXT |
 
 Fixes and FRDs are read from CRC's own `%LOCALAPPDATA%\CRC\NavData.dat`. Without it, only airports resolve. Bearings are true, not magnetic.
+
+## CFR (Continuous Flight Plan Readout)
+
+Laid out like ERAM's CFR view (manual chapter 8): title bar with DEL ALL and SHOW FIELDS, then FLID TYP BCN SPD FIX TIM ALT RTE/RMK with a rule under each flight plan. The readouts update from VATSIM every poll.
+
+- **Add:** left-click the view to get the QF entry box and type `QF R UAL123` (or just `UAL123`; several at once; `-UAL123` removes). A new readout's FLID is green for 30 seconds. Past ENTRIES, the oldest drops off.
+- **Delete:** middle-click a FLID, then DELETE. DEL ALL clears the view.
+- **Route:** ERAM dotted format (`SFO..SLC.J154.OCS..ORD`), cut at RTE characters. A boxed `*` shows the rest of the route, a boxed `R` the remarks.
+- **FIX / TIM:** on the ground or prefiled, the departure airport and proposed time (`P1530`). Airborne, the next fix ahead on the route (the first one inside your facility while still outside it) with an estimate from groundspeed (`E1615`).
+- **Coral A:** the ICAO equipment lists no ADS-B surveillance code (B1/B2/U1/U2/V1/V2).
+- **Menu:** ENTRIES 1-10, RTE 30-100 (left-click decreases, middle-click increases), FILTERS to show or hide ALT BCN CID FIX LBL RTE SPD TIM TYP. SHOW FIELDS shows hidden columns and the full route until clicked again; it's grayed out when nothing is hidden.
+- **CID:** the CRC CID and owning sector (`151 SKW5646(32)`) come from the vUSALink EDST app, which learns them from CRC QF readouts (see [CIDs from the vUSALink EDST app](#cids-from-the-vusalink-edst-app)). Without the app, or before a QF, the FLID is just the callsign.
+- **Not available:** readouts can't be sent to the RA view, since there isn't one.
+
+## UA (Update Area)
+
+Laid out like ERAM's Update Area view (manual 6.3): a Message Waiting Area and a text area below it.
+
+- **MESSAGE WAITING** turns yellow while a message needs acknowledging. Click it to acknowledge the oldest; it moves to the top of the text area. A scroll bar appears when the text is longer than the area (mouse wheel works too).
+- **Middle-click** a message in the text area to delete it.
+- **Menu:** O, BORDER, FONT, BRIGHT, MSG WAIT and TEXT (show or suppress each area, gray = shown).
+- Acknowledged messages are remembered in your profile, so the same message doesn't come back after a restart.
+
+In ERAM the UA carries GI messages from other positions and UTMs from the automation. On VATSIM there's no ERAM automation behind CRC, so these sources stand in:
+
+| Tag | From | What |
+|---|---|---|
+| `GI` | vUSAlink EDST (GI button), through the vUSAlink hub | General Information notes from your ARTCC and its tier-1 neighbor centers, e.g. `1815 GI ZNY NY_CTR JFK 22L/22R`. Notes already on the hub when the companion starts go straight into the text area, as the EDST does. |
+| `TMU` | VATFLOW Airport TMU (the TBFM page), through vatflow-hub | Ground stops, restrictions and arrival rate programs (AAR, MIT, gate MITs) that name one of your ARTCC's airports or have your ARTCC as requesting or providing facility, e.g. `TMU ARR RATE KDCA AAR 32 CAPPS 20MIT`. A change is sent as `AMEND`, one that ends as `CANCEL`. |
+| `FLOW` | VATFLOW FCA programs (the same Supabase table as MRP) | An FCA for your ARTCC turned on, amended, or turned off (`CANCEL`). |
+
+The vUSAlink hub is polled every 10 s, only while the UA view (or a CPDLC view) is open. For TMU the companion listens on vatflow-hub's WebSocket, which sends the whole Airport TMU state on connect and after every change; it never sends anything (only signed-in TMU editors can change it) and connects only while the UA view is open. `CRCCOMPANION_VATFLOW_HUB_URL` points it at another vatflow-hub. If a source isn't answering, its state shows in yellow at the top of the text area (`HUB DOWN`, `VATFLOW TMU DOWN`, `VATFLOW DOWN`). `NO GI FROM HUB` means the hub doesn't yet send GI notes to read-only viewers: the companion asks the hub's view-only monitor for them, and the hub needs a small change to return them there (the EDST gets them from its signed-in poll).
+
+## CIDs from the vUSALink EDST app
+
+[vUSALink App and vUSALink-Lite](https://github.com/djbrombizzle/vUSALink-App) learn CRC CIDs by reading CRC's QF readouts (`151 SKW5646(32) E75L/L`) and save them to `%LOCALAPPDATA%\vUSALinkApp\cids.json`. The companion reads that file (read-only, when it changes) and shows the CID and owning sector in CFR's FLID and in the CID column of CPDLC HIST and MSGOUT. The app drops a pair when the pilot reconnects or leaves VATSIM, so the companion never shows a stale CID for long. Without the app, these stay blank as before.
 
 ## MRP (VATFLOW FCAs)
 
@@ -74,7 +110,7 @@ The four CPDLC buttons show the datalink traffic for your ARTCC from [vUSAlink](
 | CPDLC MSGOUT | ERAM's Message Out view (title `MESSAGE OUT`, CLEANUP). **SPECIAL AREA**: errors in orange, UNA (pilot said UNABLE) and TIM (no reply 120 s after sending), until acknowledged: click the status for ACKNOWLEDGE (moves it to the normal area) or ACKNOWLEDGE+DELETE. **NORMAL AREA**: SNT (waiting), STBY, and closed messages dimmed (WIL, ROG, RCVD, NRR, CLSD) until CLEANUP. Click ACID, STAT or TIME to sort (filled arrow = active sort), MSG FILTER... to hide statuses. Click a message to see its full text. Last 30 minutes. | TEXT, RESTORE |
 | CPDLC TOC SET | Hub link status and the aircraft logged on to CPDLC in your ARTCC, with the frequency each is tuned to now and its last CONTACT/MONITOR uplink and reply | TEXT |
 
-MSG CONTENT uses ERAM short forms where the wording allows: `↑380` (climb), `↓090` (descend), `350` (maintain), `DRCT HAR`. Longer text is cut with `*`; click it for the full message. CID and ORG are blank in both views (see below). `CRCCOMPANION_HUB_URL` points the companion at a different hub, e.g. a local test hub.
+MSG CONTENT uses ERAM short forms where the wording allows: `↑380` (climb), `↓090` (descend), `350` (maintain), `DRCT HAR`. Longer text is cut with `*`; click it for the full message. CID comes from the vUSALink EDST app once it has seen a QF for that aircraft; ORG stays blank (see below). `CRCCOMPANION_HUB_URL` points the companion at a different hub, e.g. a local test hub.
 
 HISTORY STAT codes come from what the hub reports:
 
@@ -86,7 +122,7 @@ HISTORY STAT codes come from what the hub reports:
 | APRV, UNA, ROG | Pilot request (or logon request) answered with an uplink, an UNABLE, or a ROGER |
 | `*` after UNA / CLSD | Has a Due To Reason (UNABLE text, or SESSION TERMINATED) |
 
-Not shown, because vUSAlink doesn't report them: ERR, FAIL, NS, CNCL, ICMSM, ACK and the `-ERR` variants, and the CID and ORG columns (the hub logs no ERAM computer ID and only the ARTCC, not the sector).
+Not shown, because vUSAlink doesn't report them: ERR, FAIL, NS, CNCL, ICMSM, ACK and the `-ERR` variants, and the ORG column (the hub logs only the ARTCC, not the sector). CID is filled from the vUSALink EDST app when it knows it.
 
 The monitor feed has no message reference numbers, so a reply is matched to the oldest unanswered uplink to that aircraft. The hub keeps only its last 60 messages per ARTCC; the companion keeps up to 500 while it runs.
 
@@ -141,7 +177,7 @@ Drawn like ERAM's Inbound and Departure List views (R-Position User Manual 13.3-
 
 | M menu | Does |
 |---|---|
-| O, BORDER, TEAROFF, LINES, FONT, BRIGHT | As in ERAM. TEAROFF shows the sublist markers. |
+| O, BORDER, TEAROFF, LINES, FONT, BRIGHT | As in ERAM. Each sublist heading always has its gold marker. |
 | SORT | BOUNDARY TIME (INBND: sublists by earliest boundary time), FIX NAME (alphabetical); off = the order you entered them. Turn DELETE on, then click a sublist name to delete it. |
 | Blank row under SORT | Click it, type a sublist name (fix or airport), Enter to add it |
 | MIN (INBND), PREFILE (DEPT) | Companion extras: look-ahead minutes; show prefiles |

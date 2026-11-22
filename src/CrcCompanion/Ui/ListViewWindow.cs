@@ -21,6 +21,9 @@ namespace CrcCompanion.Ui
     /// 1 px border, 17 px title bar with 23 px "M" and "-" cells, 1 px rule, 8 px body padding,
     /// 21 px rows. Also owns the M menu, the station entry box and the delete popup.
     /// </summary>
+    /// <summary>A title bar button. Dim draws the label grayed out; a dim button ignores clicks unless ClickWhenDim.</summary>
+    public sealed record TitleBarButton(string Label, System.Windows.Media.Brush? Back, Action Run, bool Dim = false, bool ClickWhenDim = true);
+
     public abstract class ListViewWindow : EramWindow
     {
         protected readonly IViewHost Host;
@@ -94,6 +97,10 @@ namespace CrcCompanion.Ui
         /// <summary>Draw the title bar button's label dimmed (nothing for it to do).</summary>
         protected virtual bool TitleButtonDim => false;
 
+        /// <summary>Title bar buttons, left to right, drawn left of "-" (CFR has DEL ALL and SHOW FIELDS).</summary>
+        protected virtual IReadOnlyList<TitleBarButton> TitleButtons =>
+            TitleButton is { } b ? new[] { new TitleBarButton(b.Label, b.Back, b.Run, TitleButtonDim) } : Array.Empty<TitleBarButton>();
+
         /// <summary>Space above and below the body rows. Views that draw their own panels use 0.</summary>
         protected virtual int BodyPadding => BodyPad;
 
@@ -114,31 +121,35 @@ namespace CrcCompanion.Ui
             double bodyTop = 2 + th;                 // border + title + rule
             int pad = BodyPadding;
             var title = TitleText;
-            var button = TitleButton;
-            double buttonW = button == null ? 0 : m.TextWidth(button.Value.Label.Length) + 2 * m.Cell;
+            var buttons = TitleButtons;
+            var widths = new double[buttons.Count];
+            double buttonsW = 0;
+            for (int i = 0; i < buttons.Count; i++) { widths[i] = m.TextWidth(buttons[i].Label.Length) + 2 * m.Cell; buttonsW += widths[i] + 1; }
 
             var body = PaintBody(p.MeasureOnly(), 1, bodyTop + pad);
-            double minW = 2 + box * 2 + 2 + m.TextWidth(title.Length) + 2 * m.Cell + (button == null ? 0 : buttonW + 1);
+            double minW = 2 + box * 2 + 2 + m.TextWidth(title.Length) + 2 * m.Cell + buttonsW;
             double w = Math.Max(minW, 1 + body.Width + 1);
             double h = bodyTop + pad + body.Height + pad + 1;
 
             p.Fill(Settings.Opaque ? Eram.Black : Eram.HalfBlack, 0, 0, w, h);
 
-            // Title bar: [M][   TITLE   ][-]
+            // Title bar: [M][   TITLE   ][buttons][-]
             var tb = TextBrush;
             double gt = 1 + m.GlyphTopInTitle;
             p.TextCentered("M", 1, box, gt, m, tb);
             p.Fill(Eram.ViewBorder, 1 + box, 1, 1, th);
-            double titleX = 2 + box, titleW = w - 4 - box * 2 - (button == null ? 0 : buttonW + 1);
+            double titleX = 2 + box, titleW = w - 4 - box * 2 - buttonsW;
             p.TextCentered(title, titleX, titleW, gt, m, tb);
-            if (button != null)
+            double bx = w - 2 - box - buttonsW + 1;
+            for (int i = 0; i < buttons.Count; i++)
             {
-                double bx = w - 2 - box - buttonW;
+                var b = buttons[i];
                 p.Fill(Eram.ViewBorder, bx - 1, 1, 1, th);
-                p.Fill(button.Value.Back, bx, 1, buttonW, th);
-                p.TextCentered(button.Value.Label, bx, buttonW, gt, m, TitleButtonDim ? Eram.TextGray(Settings.Bright / 2) : tb);
-                var run = button.Value.Run;
-                p.Hit(bx, 1, buttonW, th, _ => run());
+                if (b.Back != null) p.Fill(b.Back, bx, 1, widths[i], th);
+                p.TextCentered(b.Label, bx, widths[i], gt, m, b.Dim ? Eram.TextGray(Settings.Bright / 2) : tb);
+                var run = b.Run;
+                if (!b.Dim || b.ClickWhenDim) p.Hit(bx, 1, widths[i], th, _ => run());
+                bx += widths[i] + 1;
             }
             p.Fill(Eram.ViewBorder, w - 2 - box, 1, 1, th);
             p.TextCentered("-", w - 1 - box, box, gt, m, tb);

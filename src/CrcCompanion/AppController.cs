@@ -26,6 +26,13 @@ namespace CrcCompanion
         private readonly LiveDataService _live;
         private readonly CpdlcService _cpdlc;
         private readonly FcaService _fca;
+        private readonly VatflowTmuService _tmi;
+        private readonly UaTracker _tmiTracker = new UaTracker("TMU");
+        private readonly UaTracker _fcaTracker = new UaTracker("FLOW");
+        private string _uaFir = "";
+        private UaQueue _ua = new UaQueue();
+        private readonly EdstCidBook _edstCids = new EdstCidBook();
+        private DateTime _edstCidsChecked = DateTime.MinValue, _edstCidsStamp = DateTime.MinValue;
         private readonly FcaWorld _fcaWorld;
         private List<FcaPilot> _fcaPilots = new List<FcaPilot>();
         private VatflowNav? _fcaNav;
@@ -61,6 +68,47 @@ namespace CrcCompanion
         private static bool IsCpdlcKey(string key) => key.StartsWith("CPDLC ", StringComparison.Ordinal);
 
         public CpdlcLog Cpdlc => _cpdlc.Log;
+
+        // UA (Update Area): GI from the vUSAlink EDST (hub); Airport TMU and FCA programs from VATFLOW.
+        public UaQueue UpdateArea => _ua;
+        public string UaStatus
+        {
+            get
+            {
+                var parts = new List<string>();
+                if (Facility == null) return "NO FACILITY";
+                if (Cpdlc.Error.Length > 0) parts.Add(Cpdlc.Error);
+                else if (Cpdlc.LastPollUtc != null && !Cpdlc.GiSupported) parts.Add("NO GI FROM HUB");
+                if (_tmi.Error.Length > 0) parts.Add(_tmi.Error);
+                if (_fca.Error.Length > 0) parts.Add(_fca.Error);
+                return string.Join("  ", parts);
+            }
+        }
+
+        /// <summary>
+        /// The CRC CID (and owning sector) the vUSALink EDST app learned for a callsign from a QF readout, or null.
+        /// Reads %LOCALAPPDATA%\vUSALinkApp\cids.json when it changes (checked at most every 5 s).
+        /// </summary>
+        public EdstCidBook.Entry? EdstCid(string callsign)
+        {
+            var now = DateTime.UtcNow;
+            if (now - _edstCidsChecked > TimeSpan.FromSeconds(5))
+            {
+                _edstCidsChecked = now;
+                try
+                {
+                    var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "vUSALinkApp", "cids.json");
+                    var stamp = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
+                    if (stamp != _edstCidsStamp)
+                    {
+                        _edstCidsStamp = stamp;
+                        _edstCids.Replace(stamp == DateTime.MinValue ? new Dictionary<string, EdstCidBook.Entry>() : EdstCidBook.Parse(File.ReadAllText(path)));
+                    }
+                }
+                catch (Exception) { /* file being written: try again next time */ }
+            }
+            return _edstCids.Find(callsign);
+        }
 
         // MRP (VATFLOW FCAs)
         public IReadOnlyList<FcaProgram> FcaPrograms => _fca.Programs;
@@ -137,11 +185,16 @@ namespace CrcCompanion
             // CRCCOMPANION_HUB_URL points at another hub (e.g. a local test hub); default is the shared KUSA hub.
             var hubUrl = Environment.GetEnvironmentVariable("CRCCOMPANION_HUB_URL");
             _cpdlc = new CpdlcService(app.Dispatcher, string.IsNullOrWhiteSpace(hubUrl) ? CpdlcHub.DefaultUrl : hubUrl);
-            _cpdlc.Updated += RefreshCpdlc;
+            _cpdlc.Updated += () => { FeedUa(); RefreshCpdlc(); };
+            // VATFLOW Airport TMU (ground stops, restrictions, arrival rates): read-only, only while UA is open.
+            // CRCCOMPANION_VATFLOW_HUB_URL points at another vatflow-hub (e.g. a local test hub).
+            var vfHub = Environment.GetEnvironmentVariable("CRCCOMPANION_VATFLOW_HUB_URL");
+            _tmi = new VatflowTmuService(app.Dispatcher, string.IsNullOrWhiteSpace(vfHub) ? VatflowTmuService.DefaultUrl : vfHub);
+            _tmi.Updated += () => { FeedUa(); RefreshUa(); };
 
             // VATFLOW FCA programs (MRP view): read-only, polled only while the MRP view is open.
             _fca = new FcaService(app.Dispatcher, Path.Combine(ProfileStore.DefaultRoot(), "cache"));
-            _fca.Updated += () => { _fcaNav = _fca.Nav; MrpVersion++; RefreshGrid(); };
+            _fca.Updated += () => { _fcaNav = _fca.Nav; MrpVersion++; FeedUa(); RefreshGrid(); };
             _fcaWorld = new FcaWorld(this);
 
             if (_store.List().Count == 0) _store.Save(new Profile { Name = "DEFAULT" });
@@ -171,6 +224,7 @@ namespace CrcCompanion
         {
             CloseWindows();
             _profile = _store.Load(name);
+            LoadUa();
             _settings.ActiveProfile = name;
             _store.SaveSettings(_settings);
 
@@ -210,7 +264,7 @@ namespace CrcCompanion
             "HOLD LIST" => new HoldListView(this, s, this),
             "MRP LIST" => new MrpView(this, s, this),
             "SAA FILTER" => new SaaFilterView(this, s, this),
-            "UA" => new UnassociatedView(this, s, this),
+            "UA" => new UpdateAreaView(this, s, this),
             "CPDLC ADV" => new CpdlcAdvView(this, s, this),
             "CPDLC HIST" => new CpdlcHistView(this, s, this),
             "CPDLC MSGOUT" => new CpdlcMsgoutView(this, s, this),
@@ -507,9 +561,57 @@ namespace CrcCompanion
         /// <summary>Points the hub poller at your ARTCC, and runs it only while a CPDLC view is shown.</summary>
         private void UpdateCpdlc()
         {
-            bool shown = _grid.Any(kv => IsCpdlcKey(kv.Key) && kv.Value.Settings.Visible);
+            bool ua = _grid.TryGetValue("UA", out var uav) && uav.Settings.Visible;
+            bool shown = ua || _grid.Any(kv => IsCpdlcKey(kv.Key) && kv.Value.Settings.Visible);
             _cpdlc?.Configure(Facility?.Fir, shown);
-            _fca?.Configure(Facility?.Fir, _grid.TryGetValue("MRP LIST", out var mrp) && mrp.Settings.Visible);
+            _fca?.Configure(Facility?.Fir, ua || (_grid.TryGetValue("MRP LIST", out var mrp) && mrp.Settings.Visible));
+            _tmi?.Configure(ua && Facility != null);
+        }
+
+        // ---------- UA ----------
+
+        private const string UaAckKey = "ack";
+
+        private void LoadUa()
+        {
+            var v = _profile.ExtraFor("UA").Values;
+            _ua = new UaQueue(v.TryGetValue(UaAckKey, out var s) ? s.Split('|', StringSplitOptions.RemoveEmptyEntries) : null);
+            _ua.Changed += () =>
+            {
+                _profile.ExtraFor("UA").Values[UaAckKey] = string.Join("|", _ua.AckedKeys);
+                MarkDirty();
+                RefreshUa();
+            };
+            _tmiTracker.Reset();
+            _fcaTracker.Reset();
+        }
+
+        /// <summary>Turns new GI notes, VATFLOW TMU changes and FCA changes into UA messages.</summary>
+        private void FeedUa()
+        {
+            if (_cpdlc == null || _tmi == null || _fca == null) return;
+            var fir = Facility?.Fir ?? "";
+            if (fir != _uaFir) { _uaFir = fir; _tmiTracker.Reset(); _fcaTracker.Reset(); }
+            var now = DateTime.UtcNow;
+
+            var gi = Cpdlc.TakeNewGi(out bool backlog);
+            if (gi.Count > 0) _ua.Add(gi.Select(g => g.ToUa()), silent: backlog);
+
+            var f = Facility;
+            if (f == null) return;
+            var artcc = _fca.Artcc;
+            if (_tmi.Items != null && artcc.Length > 0)
+            {
+                var mine = _tmi.Items.Where(t => VatflowTmu.Concerns(t, artcc, a => f.Airports.ContainsKey(a)));
+                _ua.Add(_tmiTracker.Update(UaTracker.TmiItems(mine), now));
+            }
+            if (_fca.LastLoadUtc != null && artcc.Length > 0)
+                _ua.Add(_fcaTracker.Update(UaTracker.FcaItems(_fca.Programs), now));
+        }
+
+        private void RefreshUa()
+        {
+            if (_grid.TryGetValue("UA", out var v)) v.Refresh();
         }
 
         private void RefreshCpdlc()
@@ -639,6 +741,7 @@ namespace CrcCompanion
             _live.Dispose();
             _cpdlc.Dispose();
             _fca.Dispose();
+            _tmi.Dispose();
             _tray.Dispose();
         }
     }

@@ -224,7 +224,8 @@ namespace CrcCompanion.Ui
                     double top = y0 + tops[v] + m.GlyphTopInRow;
                     if (line.Item == null)
                     {
-                        if (Settings.Tearoff) DrawMarker(p, tx, top - (m.MarkerH - m.Cap) / 2.0);
+                        // Every sublist heading has its gold marker, whatever TEAROFF is set to.
+                        DrawMarker(p, tx, top - (m.MarkerH - m.Cap) / 2.0);
                         p.Text(line.Title, tx + m.TextWidth(AltCol), top, m, tb);
                         continue;
                     }

@@ -11,7 +11,7 @@ namespace CrcCompanion.Services
 {
     /// <summary>
     /// Polls the vUSAlink hub's view-only monitor feed for one airspace every 10 s, only while a CPDLC view
-    /// is open. Read-only and unauthenticated: it sends only the airspace (e.g. "KZDC") and never your CID,
+    /// is open (or the UA view, for GI notes). Read-only and unauthenticated: it sends only the airspace (e.g. "KZDC") and never your CID,
     /// so it can't disturb your vUSAlink EDST session. Results are merged into <see cref="Log"/> on the UI thread.
     /// </summary>
     public sealed class CpdlcService : IDisposable
@@ -62,12 +62,13 @@ namespace CrcCompanion.Services
         {
             if (_disposed || !_active || !await _gate.WaitAsync(0).ConfigureAwait(false)) return;
             var airspace = _airspace;
-            long since = 0;
+            long since = 0, sinceGi = 0;
             try
             {
                 // Read on the UI thread so it matches the log being merged into.
-                since = await _ui.InvokeAsync(() => Log.Airspace == airspace ? Log.LastId : 0);
-                var body = JsonSerializer.Serialize(new { airspace, since });
+                (since, sinceGi) = await _ui.InvokeAsync(() => Log.Airspace == airspace ? (Log.LastId, Log.LastGiId) : (0L, 0L));
+                // sinceGi asks for GI notes too; hubs that don't send GI to the monitor ignore it.
+                var body = JsonSerializer.Serialize(new { airspace, since, sinceGi });
                 using var content = new StringContent(body, Encoding.UTF8, "application/json");
                 using var resp = await _http.PostAsync(_hubUrl + "/hub/monitor", content).ConfigureAwait(false);
                 var json = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);

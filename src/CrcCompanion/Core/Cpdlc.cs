@@ -44,6 +44,12 @@ namespace CrcCompanion.Core
             public List<CpdlcEvent> Events { get; } = new List<CpdlcEvent>();
             public HashSet<string> Connected { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             public long EventId { get; init; }
+            /// <summary>GI notes for this ARTCC and its tier-1 neighbors (only from hubs that send GI to the monitor).</summary>
+            public List<GiMessage> Gi { get; } = new List<GiMessage>();
+            /// <summary>The reply had a "gi" field at all.</summary>
+            public bool HasGi { get; set; }
+            /// <summary>The hub's newest GI id ("giId"); lower than ours after a hub restart.</summary>
+            public long GiHead { get; set; }
         }
 
         /// <summary>Parses a /hub/monitor reply. Returns null when it isn't ok.</summary>
@@ -66,6 +72,12 @@ namespace CrcCompanion.Core
                     var ev = ParseEvent(m);
                     if (ev != null) reply.Events.Add(ev);
                 }
+            if (root.TryGetProperty("gi", out var gi) && gi.ValueKind == JsonValueKind.Array)
+            {
+                reply.HasGi = true;
+                reply.GiHead = root.TryGetProperty("giId", out var gh) && gh.TryGetInt64(out var ghv) ? ghv : 0;
+                reply.Gi.AddRange(GiMessage.ParseArray(gi));
+            }
             return reply;
         }
 
@@ -233,6 +245,10 @@ namespace CrcCompanion.Core
             LastId = 0;
             LastPollUtc = null;
             Error = "";
+            LastGiId = 0;
+            GiPrimed = false;
+            NewGiIsBacklog = false;
+            _newGi.Clear();
         }
 
         public void Merge(CpdlcHub.MonitorReply reply, DateTime nowUtc)
@@ -244,11 +260,41 @@ namespace CrcCompanion.Core
             while (_events.Count > MaxEvents) _events.Remove(_events.Keys.First());
             Connected = reply.Connected;
             LastId = Math.Max(LastId, reply.EventId);
+            if (reply.HasGi)
+            {
+                GiSupported = true;
+                if (reply.GiHead > 0 && reply.GiHead < LastGiId) LastGiId = 0;   // hub restarted
+                var fresh = reply.Gi.Where(g => g.Id > LastGiId).ToList();
+                if (fresh.Count > 0)
+                {
+                    LastGiId = fresh.Max(g => g.Id);
+                    _newGi.AddRange(fresh);
+                }
+                if (!GiPrimed) { GiPrimed = true; NewGiIsBacklog = true; }
+            }
             LastPollUtc = nowUtc;
             Error = "";
         }
 
         public void Fail(string error) => Error = error;
+
+        private readonly List<GiMessage> _newGi = new List<GiMessage>();
+        /// <summary>Highest GI id received (the hub's sinceGi cursor).</summary>
+        public long LastGiId { get; private set; }
+        /// <summary>The hub sends GI to the monitor.</summary>
+        public bool GiSupported { get; private set; }
+        private bool GiPrimed;
+        private bool NewGiIsBacklog;
+
+        /// <summary>GI received since the last call. <paramref name="backlog"/>: the first batch (older notes).</summary>
+        public List<GiMessage> TakeNewGi(out bool backlog)
+        {
+            backlog = NewGiIsBacklog;
+            NewGiIsBacklog = false;
+            var list = _newGi.ToList();
+            _newGi.Clear();
+            return list;
+        }
 
         /// <summary>Newest first, optionally for some aircraft only.</summary>
         public List<CpdlcEvent> History(ICollection<string>? callsigns = null) =>

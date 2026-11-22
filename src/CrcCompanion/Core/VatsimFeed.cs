@@ -23,6 +23,12 @@ namespace CrcCompanion.Core
         public int CruiseTas { get; init; }
         /// <summary>Filed departure time "HHMM".</summary>
         public string DepTime { get; init; } = "";
+        /// <summary>Type with equipment suffix as ERAM shows it ("B744/L").</summary>
+        public string TypeSuffix { get; init; } = "";
+        /// <summary>Filed remarks.</summary>
+        public string Remarks { get; init; } = "";
+        /// <summary>The ICAO surveillance codes list no ADS-B (CFR's coral "A").</summary>
+        public bool NonAdsb { get; init; }
     }
 
     public sealed class Pilot
@@ -184,6 +190,9 @@ namespace CrcCompanion.Core
                 NonRvsm = StripLists.IsNonRvsm(Str(fp, "aircraft"), Str(fp, "aircraft_faa")),
                 CruiseTas = int.TryParse(Str(fp, "cruise_tas"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var tas) ? tas : 0,
                 DepTime = Str(fp, "deptime"),
+                TypeSuffix = Cfr.TypeSuffix(Str(fp, "aircraft_faa"), ShortType(Str(fp, "aircraft_short"), Str(fp, "aircraft_faa"))),
+                Remarks = Str(fp, "remarks").Trim().ToUpperInvariant(),
+                NonAdsb = Cfr.NonAdsb(Str(fp, "aircraft")),
             };
         }
 

@@ -39,63 +39,6 @@ namespace CrcCompanion.Ui
         }
     }
 
-    /// <summary>CFR (call for release): departures waiting at airports you list; click to mark released / hold.</summary>
-    public sealed class CfrView : DataListView
-    {
-        private readonly Dictionary<string, (string State, DateTime Utc)> _states = new Dictionary<string, (string, DateTime)>(StringComparer.OrdinalIgnoreCase);
-
-        public CfrView(IViewHost h, ViewSettings s, ILiveSource l) : base(h, s, "CFR", l) { }
-        protected override string MenuTitle => "CF";
-
-        protected override IEnumerable<MenuRow> ExtraMenuRows()
-        {
-            yield return new ToggleRow("PREFILE", () => Settings.ShowPrefiles, () => { Settings.ShowPrefiles = !Settings.ShowPrefiles; Changed(); });
-            yield return EntryRow("AIRPORTS", "CFR AIRPORTS  IAD DCA / -DCA", () => Settings.Items,
-                t => EntryList.Apply(Settings.Items, t, StationIds.Normalize));
-        }
-
-        private void Cycle(string cs)
-        {
-            // none -> REL (time stamped) -> HOLD -> none
-            if (!_states.TryGetValue(cs, out var s)) _states[cs] = ("REL", DateTime.UtcNow);
-            else if (s.State == "REL") _states[cs] = ("HOLD", DateTime.UtcNow);
-            else _states.Remove(cs);
-            Changed();
-        }
-
-        protected override List<DataLine> BuildLines()
-        {
-            var lines = new List<DataLine>();
-            if (Settings.Items.Count == 0) { lines.Add(new DataLine { Text = "M > AIRPORTS TO ADD" }); return lines; }
-            var f = Live.Facility;
-            var t = Live.Traffic;
-            var waiting = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var apt in Settings.Items)
-            {
-                lines.Add(new DataLine { Text = apt, Heading = lines.Count > 0 });
-                if (t == null || f == null) continue;
-                foreach (var d in t.Departures.Where(d => f.DisplayAirport(d.Departure) == apt && (Settings.ShowPrefiles || !d.IsPrefile)))
-                {
-                    waiting.Add(d.Callsign);
-                    string state = _states.TryGetValue(d.Callsign, out var s) ? s.State + " " + Hhmm(s.Utc) : "";
-                    var cs = d.Callsign;
-                    lines.Add(new DataLine
-                    {
-                        Text = ((d.IsPrefile ? "P " : "  ") + Fit(cs, StripFormat.CallsignChars) + " " + Fit(d.Type, 4) + " " +
-                                Fit(f.DisplayAirport(d.Destination), 4) + " " + state).TrimEnd(),
-                        Key = cs,
-                        Click = _ => Cycle(cs),
-                    });
-                }
-            }
-            // Released flights that have left the ground drop off.
-            foreach (var k in _states.Keys.Where(k => !waiting.Contains(k)).ToList())
-                if (t != null) _states.Remove(k);
-            if (t == null) lines.Insert(0, new DataLine { Text = Live.StatusText });
-            return lines;
-        }
-    }
-
     /// <summary>CODE (Beacon Code View): codes of tracked targets in your facility, plus QB codes shown with a period.</summary>
     public sealed class CodeView : DataListView
     {
@@ -401,27 +344,4 @@ namespace CrcCompanion.Ui
             }).ToList();
     }
 
-    /// <summary>UA (unassociated): airborne targets in your facility with no flight plan.</summary>
-    public sealed class UnassociatedView : DataListView
-    {
-        public UnassociatedView(IViewHost h, ViewSettings s, ILiveSource l) : base(h, s, "UA", l) { }
-        protected override string MenuTitle => "UA";
-        protected override int MinChars => 28;
-
-        protected override List<DataLine> BuildLines()
-        {
-            var nd = NoDataLine();
-            if (nd != null) return new List<DataLine> { nd };
-            var f = Live.Facility!;
-            var sup = Live.SuppressedGroups;
-            return Unassociated.Find(Live.Snapshot!, f)
-                .Where(p => !BeaconCodes.Suppressed(sup, p.Squawk))
-                .Select(p => new DataLine
-                {
-                    Text = Fit(p.Callsign, StripFormat.CallsignChars) + " " + Alt((int)Math.Round(p.Altitude / 100.0)) + " " +
-                           Fit(p.Squawk.Trim(), 4) + " " + Unassociated.Where(p.Pos, f),
-                    Key = p.Callsign,
-                }).ToList();
-        }
-    }
 }
