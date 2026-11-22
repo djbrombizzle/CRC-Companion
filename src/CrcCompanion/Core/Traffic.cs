@@ -24,6 +24,9 @@ namespace CrcCompanion.Core
         /// <summary>Callsign of the other local controller the aircraft is tuned to, if any.</summary>
         public string With { get; init; } = "";
         public bool IsPrefile { get; init; }
+        /// <summary>Filed altitude as ERAM shows it ("150", "170B210", "VFR", "OTP").</summary>
+        public string Filed { get; init; } = "";
+        public bool NonRvsm { get; init; }
     }
 
     public sealed class TrafficResult
@@ -143,6 +146,8 @@ namespace CrcCompanion.Core
                     Squawk = pf.Plan.AssignedSquawk,
                     Route = pf.Plan.Route,
                     IsPrefile = true,
+                    Filed = pf.Plan.FiledAltitude,
+                    NonRvsm = pf.Plan.NonRvsm,
                 });
             }
 
@@ -170,6 +175,8 @@ namespace CrcCompanion.Core
                 EntryUtc = mte == null ? null : now.AddMinutes(mte.Value),
                 Freq = st,
                 With = with,
+                Filed = plan?.FiledAltitude ?? "",
+                NonRvsm = plan?.NonRvsm ?? false,
             };
 
         /// <summary>

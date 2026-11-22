@@ -30,6 +30,9 @@ namespace CrcCompanion.Core
                 }
         }
 
+        /// <summary>Middle of the bounding box (a reference point for picking among same-named fixes).</summary>
+        public LatLon Center => new LatLon((_minLat + _maxLat) / 2, (_minLon + _maxLon) / 2);
+
         public bool Contains(LatLon p)
         {
             if (p.Lat < _minLat || p.Lat > _maxLat || p.Lon < _minLon || p.Lon > _maxLon) return false;

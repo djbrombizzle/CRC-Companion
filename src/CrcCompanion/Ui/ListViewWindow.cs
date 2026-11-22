@@ -85,6 +85,18 @@ namespace CrcCompanion.Ui
 
         protected virtual void OnBodyWheel(int delta) { }
 
+        /// <summary>Title bar text (the view name unless a view adds to it, e.g. "HISTORY UAL1026").</summary>
+        protected virtual string TitleText => ViewTitle;
+
+        /// <summary>Optional title bar button drawn left of "-" (e.g. HISTORY's DEL ALL).</summary>
+        protected virtual (string Label, System.Windows.Media.Brush Back, Action Run)? TitleButton => null;
+
+        /// <summary>Draw the title bar button's label dimmed (nothing for it to do).</summary>
+        protected virtual bool TitleButtonDim => false;
+
+        /// <summary>Space above and below the body rows. Views that draw their own panels use 0.</summary>
+        protected virtual int BodyPadding => BodyPad;
+
         protected abstract IReadOnlyList<MenuRow> BuildMenuRows();
 
         /// <summary>Draws one outlined tear-off marker with its top-left at (x, y).</summary>
@@ -100,11 +112,15 @@ namespace CrcCompanion.Ui
             var m = M;
             int th = m.TitleH, box = m.BoxW;
             double bodyTop = 2 + th;                 // border + title + rule
+            int pad = BodyPadding;
+            var title = TitleText;
+            var button = TitleButton;
+            double buttonW = button == null ? 0 : m.TextWidth(button.Value.Label.Length) + 2 * m.Cell;
 
-            var body = PaintBody(p.MeasureOnly(), 1, bodyTop + BodyPad);
-            double minW = 2 + box * 2 + 2 + m.TextWidth(ViewTitle.Length) + 2 * m.Cell;
+            var body = PaintBody(p.MeasureOnly(), 1, bodyTop + pad);
+            double minW = 2 + box * 2 + 2 + m.TextWidth(title.Length) + 2 * m.Cell + (button == null ? 0 : buttonW + 1);
             double w = Math.Max(minW, 1 + body.Width + 1);
-            double h = bodyTop + BodyPad + body.Height + BodyPad + 1;
+            double h = bodyTop + pad + body.Height + pad + 1;
 
             p.Fill(Settings.Opaque ? Eram.Black : Eram.HalfBlack, 0, 0, w, h);
 
@@ -113,8 +129,17 @@ namespace CrcCompanion.Ui
             double gt = 1 + m.GlyphTopInTitle;
             p.TextCentered("M", 1, box, gt, m, tb);
             p.Fill(Eram.ViewBorder, 1 + box, 1, 1, th);
-            double titleX = 2 + box, titleW = w - 4 - box * 2;
-            p.TextCentered(ViewTitle, titleX, titleW, gt, m, tb);
+            double titleX = 2 + box, titleW = w - 4 - box * 2 - (button == null ? 0 : buttonW + 1);
+            p.TextCentered(title, titleX, titleW, gt, m, tb);
+            if (button != null)
+            {
+                double bx = w - 2 - box - buttonW;
+                p.Fill(Eram.ViewBorder, bx - 1, 1, 1, th);
+                p.Fill(button.Value.Back, bx, 1, buttonW, th);
+                p.TextCentered(button.Value.Label, bx, buttonW, gt, m, TitleButtonDim ? Eram.TextGray(Settings.Bright / 2) : tb);
+                var run = button.Value.Run;
+                p.Hit(bx, 1, buttonW, th, _ => run());
+            }
             p.Fill(Eram.ViewBorder, w - 2 - box, 1, 1, th);
             p.TextCentered("-", w - 1 - box, box, gt, m, tb);
             p.Fill(Eram.ViewBorder, 1, 1 + th, w - 2, 1);
@@ -123,13 +148,15 @@ namespace CrcCompanion.Ui
             p.Hit(titleX, 1, titleW, th, _ => BeginReposition());
             p.Hit(w - 1 - box, 1, box, th, _ => Host.SetViewVisible(this, false));
 
-            if (p.Drawing) PaintBody(p, 1, bodyTop + BodyPad);
+            if (p.Drawing) PaintBody(p, 1, bodyTop + pad);
 
             if (Settings.Border) p.Frame(Eram.ViewBorder, 0, 0, w, h, 1);
             return new Size(w, h);
         }
 
         // ---------- Menu ----------
+
+        protected bool MenuOpen => _menu != null;
 
         public void ToggleMenu()
         {
@@ -164,45 +191,53 @@ namespace CrcCompanion.Ui
 
         // ---------- Stations ----------
 
-        public void OpenStationEntry()
+        public void OpenStationEntry() =>
+            OpenEntry(MenuTitle + " STATIONS", () => Settings.Stations, text =>
+            {
+                var result = StationIds.Apply(Settings.Stations, text);
+                if (result.Added.Count > 0 || result.Removed.Count > 0) Host.StationsChanged(this);
+                return StationIds.Feedback(result);
+            });
+
+        /// <summary>
+        /// One-line typed entry under the view (the station entry box, reused for other commands).
+        /// <paramref name="apply"/> handles a line and returns feedback.
+        /// </summary>
+        protected void OpenEntry(string title, Func<IReadOnlyList<string>> current, Func<string, string> apply)
         {
             if (_entry != null) { _entry.Activate(); return; }
             var previous = Native.GetForegroundWindow();
-            _entry = new StationEntryWindow(
-                MenuTitle + " STATIONS",
-                () => Settings.Stations,
-                text =>
-                {
-                    var result = StationIds.Apply(Settings.Stations, text);
-                    if (result.Added.Count > 0 || result.Removed.Count > 0) Host.StationsChanged(this);
-                    return StationIds.Feedback(result);
-                },
-                previous,
-                Host.UiScale);
+            _entry = new StationEntryWindow(title, current, apply, previous, Host.UiScale);
             _entry.Closed += (_, _) => _entry = null;
             var r = ScreenRect;
             _entry.ShowNear(r.Left, r.Bottom + 4);
         }
 
         /// <summary>Popup with a DELETE row for one station, as in CRC.</summary>
-        protected void OpenDeletePopup(string station)
-        {
-            _popup?.Close();
-            var popup = new MenuWindow(station, new List<MenuRow>
+        protected void OpenDeletePopup(string station) =>
+            OpenPopup(station, new List<MenuRow>
             {
                 new CommandRow("DELETE", _ =>
                 {
                     Settings.Stations.Remove(station);
                     Host.StationsChanged(this);
-                    _popup?.Close();
+                    ClosePopup();
                 }),
             });
+
+        /// <summary>Small ERAM menu at the cursor (one at a time per view).</summary>
+        protected void OpenPopup(string title, List<MenuRow> rows, Action? onClosed = null)
+        {
+            _popup?.Close();
+            var popup = new MenuWindow(title, rows);
             _popup = popup;
             popup.SetScale(Host.UiScale);
-            popup.Closed += (_, _) => { if (ReferenceEquals(_popup, popup)) _popup = null; };
+            popup.Closed += (_, _) => { if (ReferenceEquals(_popup, popup)) _popup = null; onClosed?.Invoke(); };
             Native.GetCursorPos(out var c);
             popup.ShowAt(c.X + 8, c.Y + 8);
         }
+
+        protected void ClosePopup() => _popup?.Close();
 
         /// <summary>Station state shared by both views.</summary>
         protected (string Time, MetarReport? Report, bool Fetched, bool Stale, bool Expired) StationState(string id, DateTime now)

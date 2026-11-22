@@ -164,6 +164,10 @@ internal static class Program
         Check("CRR label present", ToolbarLabels.Has("CRR"));
 
         TrafficTests.Run(Check, (n, e, a) => Check(n, Equals(e, a), $"expected [{e}] got [{a}]"));
+        GridTests.Run(Check, (n, e, a) => Check(n, Equals(e, a), $"expected [{e}] got [{a}]"));
+        CpdlcTests.Run(Check, (n, e, a) => Check(n, Equals(e, a), $"expected [{e}] got [{a}]"));
+        StripListTests.Run(Check, (n, e, a) => Check(n, Equals(e, a), $"expected [{e}] got [{a}]"));
+        FcaTests.Run(Check, (n, e, a) => Check(n, Equals(e, a), $"expected [{e}] got [{a}]"));
 
         Console.WriteLine($"\n{_pass} passed, {_fail} failed");
         return _fail == 0 ? 0 : 1;

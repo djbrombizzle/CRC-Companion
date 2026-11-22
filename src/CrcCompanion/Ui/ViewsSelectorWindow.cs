@@ -10,7 +10,7 @@ namespace CrcCompanion.Ui
     /// Cell 94 x 32: 1 px border, 11 px tear-off bar, 2 px border, 79 px body, 1 px border.
     /// 2 px gaps, 2 px gold frame around the 2 x 10 grid; the VIEWS button sits left of the frame.
     /// Label pixels are drawn from the capture (ToolbarLabels), so they match exactly.
-    /// Only ALTIM SET and WX REPORT are wired; the rest do nothing, as in CRC.
+    /// A button is live when the app has a view for it (see AppController); others do nothing.
     /// </summary>
     public sealed class ViewsSelectorWindow : EramWindow
     {
@@ -23,8 +23,7 @@ namespace CrcCompanion.Ui
         /// <summary>Companion button placed in the grid's blank cell (row 2, column 10).</summary>
         public const string StatusKey = "STATUS";
 
-        private static bool Wired(string label) =>
-            label == AltimKey || label == WxKey || label == InboundKey || label == DeptKey || label == StatusKey;
+        private readonly Func<string, bool> _wired;
 
         private static readonly string?[,] Grid =
         {
@@ -41,8 +40,9 @@ namespace CrcCompanion.Ui
 
         public event Action? Changed;
 
-        public ViewsSelectorWindow(SelectorSettings settings, Func<string, bool> isOn, Action<string> toggle)
+        public ViewsSelectorWindow(SelectorSettings settings, Func<string, bool> isOn, Action<string> toggle, Func<string, bool> wired)
         {
+            _wired = wired;
             _settings = settings;
             _isOn = isOn;
             _toggle = toggle;
@@ -83,7 +83,7 @@ namespace CrcCompanion.Ui
                     if (label == null) continue;
                     double cx = gx + FrameT + c * (CellW + Gap);
                     double cy = FrameT + r * (CellH + Gap);
-                    bool wired = Wired(label);
+                    bool wired = _wired(label);
                     bool on = wired && _isOn(label);
                     DrawCell(p, cx, cy, label, on ? Eram.TbOn : Eram.TbOff,
                         onBody: wired ? () => _toggle(label) : (Action?)null,

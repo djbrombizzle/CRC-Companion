@@ -35,6 +35,28 @@ namespace CrcCompanion.Core
 
         /// <summary>STATUS: the text you typed, one entry per line. Null = defaults.</summary>
         public List<string>? TextLines { get; set; }
+
+        // Views added by the companion's full VIEWS grid
+        /// <summary>Typed entries (callsigns, codes, airports, SAA names, hold entries), per view.</summary>
+        public List<string> Items { get; set; } = new List<string>();
+        /// <summary>SAA FILTER: entries switched on.</summary>
+        public List<string> Active { get; set; } = new List<string>();
+        /// <summary>CRR groups.</summary>
+        public List<CrrGroup> Groups { get; set; } = new List<CrrGroup>();
+        /// <summary>MRP LIST meter points.</summary>
+        public List<NamedPoint> Points { get; set; } = new List<NamedPoint>();
+        /// <summary>MRP LIST range in NM.</summary>
+        public int RangeNm { get; set; } = 250;
+        /// <summary>CONFLCT ALERT lateral minimum in NM.</summary>
+        public int SepNm { get; set; } = 5;
+        /// <summary>INBND / DEPT sublist order: "TIME" (boundary time), "NAME" (fix name), or "" (list order).</summary>
+        public string Sort { get; set; } = "";
+        /// <summary>View-specific named values (MRP: sublist colors and DCT format per FCA, COLOR brightness, SPEED).</summary>
+        public Dictionary<string, string> Values { get; set; } = new Dictionary<string, string>();
+        /// <summary>HOLD LIST: list flights detected holding.</summary>
+        public bool Auto { get; set; } = true;
+        /// <summary>CODE: manual (QB) codes first.</summary>
+        public bool SortManual { get; set; }
     }
 
     public sealed class SelectorSettings
@@ -52,10 +74,24 @@ namespace CrcCompanion.Core
         public SelectorSettings Selector { get; set; } = new SelectorSettings();
         public ViewSettings Altim { get; set; } = new ViewSettings { Lines = 24, Cols = 1 };
         public ViewSettings Wx { get; set; } = new ViewSettings { Lines = 5, Cols = 1 };
-        public ViewSettings Inbound { get; set; } = new ViewSettings { Lines = 20, Tearoff = false };
+        public ViewSettings Inbound { get; set; } = new ViewSettings { Lines = 20, Tearoff = true };
         public ViewSettings InSector { get; set; } = new ViewSettings { Lines = 30, Tearoff = false };
-        public ViewSettings Dept { get; set; } = new ViewSettings { Lines = 20, Tearoff = false };
+        public ViewSettings Dept { get; set; } = new ViewSettings { Lines = 20, Tearoff = true };
         public ViewSettings Status { get; set; } = new ViewSettings { Tearoff = false };
+        /// <summary>The other VIEWS grid views, keyed by button label (e.g. "CRR").</summary>
+        public Dictionary<string, ViewSettings> Extra { get; set; } = new Dictionary<string, ViewSettings>();
+
+        /// <summary>Settings for a grid view, created on first use.</summary>
+        public ViewSettings ExtraFor(string key)
+        {
+            if (!Extra.TryGetValue(key, out var v) || v == null)
+            {
+                Extra[key] = v = new ViewSettings { Tearoff = false };
+                // CPDLC views: message text as wide as in ERAM (36 in HISTORY, 20 in MESSAGE OUT).
+                if (key.StartsWith("CPDLC ", System.StringComparison.Ordinal)) v.RouteChars = key == "CPDLC MSGOUT" ? 20 : 36;
+            }
+            return v;
+        }
 
         /// <summary>A copy with this profile's layout and settings but no station lists.</summary>
         public Profile CloneLayout(string newName)
@@ -195,9 +231,20 @@ namespace CrcCompanion.Core
             p.InSector ??= new ViewSettings { Lines = 30, Tearoff = false };
             p.Dept ??= new ViewSettings { Lines = 20, Tearoff = false };
             p.Status ??= new ViewSettings { Tearoff = false };
-            foreach (var v in new[] { p.Altim, p.Wx, p.Inbound, p.InSector, p.Dept, p.Status })
+            p.Extra ??= new Dictionary<string, ViewSettings>();
+            foreach (var k in p.Extra.Keys.Where(k => p.Extra[k] == null).ToList()) p.Extra.Remove(k);
+            foreach (var v in new[] { p.Altim, p.Wx, p.Inbound, p.InSector, p.Dept, p.Status }.Concat(p.Extra.Values))
             {
+                v.Items = (v.Items ?? new List<string>()).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+                v.Active = (v.Active ?? new List<string>()).Distinct().ToList();
+                v.Groups = (v.Groups ?? new List<CrrGroup>()).Where(g => g != null && g.Label.Length > 0).ToList();
+                foreach (var g in v.Groups) g.Aircraft ??= new List<string>();
+                v.Points = (v.Points ?? new List<NamedPoint>()).Where(x => x != null && x.Name.Length > 0).ToList();
+                v.RangeNm = Math.Clamp(v.RangeNm, Limits.RangeMin, Limits.RangeMax);
+                v.SepNm = Math.Clamp(v.SepNm, Limits.SepMin, Limits.SepMax);
                 v.RouteChars = Math.Clamp(v.RouteChars, Limits.RouteMin, Limits.RouteMax);
+                v.Sort ??= "";
+                v.Values ??= new Dictionary<string, string>();
                 v.Minutes = Math.Clamp(v.Minutes, Limits.MinutesMin, Limits.MinutesMax);
                 v.Lines = Math.Clamp(v.Lines, Limits.LinesMin, Limits.LinesMax);
                 v.Cols = Math.Clamp(v.Cols, Limits.ColsMin, Limits.ColsMax);
@@ -218,5 +265,7 @@ namespace CrcCompanion.Core
         public const int BrightMin = 0, BrightMax = 100, BrightStep = 2;
         public const int RouteMin = 0, RouteMax = 80, RouteStep = 2;
         public const int MinutesMin = 5, MinutesMax = 60, MinutesStep = 5;
+        public const int RangeMin = 50, RangeMax = 1000, RangeStep = 50;
+        public const int SepMin = 3, SepMax = 10;
     }
 }

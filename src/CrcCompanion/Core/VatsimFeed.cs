@@ -15,6 +15,14 @@ namespace CrcCompanion.Core
         public int AltitudeHundreds { get; init; }
         public string Route { get; init; } = "";
         public string AssignedSquawk { get; init; } = "";
+        /// <summary>Filed altitude as ERAM shows it ("150", "170B210", "VFR", "OTP"); see StripLists.FiledAltitude.</summary>
+        public string FiledAltitude { get; init; } = "";
+        /// <summary>The equipment says the aircraft isn't RVSM approved.</summary>
+        public bool NonRvsm { get; init; }
+        /// <summary>Filed cruise TAS, knots (0 if none).</summary>
+        public int CruiseTas { get; init; }
+        /// <summary>Filed departure time "HHMM".</summary>
+        public string DepTime { get; init; } = "";
     }
 
     public sealed class Pilot
@@ -172,6 +180,10 @@ namespace CrcCompanion.Core
                 AltitudeHundreds = ParseAltitudeHundreds(Str(fp, "altitude")),
                 Route = Str(fp, "route").ToUpperInvariant(),
                 AssignedSquawk = Str(fp, "assigned_transponder"),
+                FiledAltitude = StripLists.FiledAltitude(Str(fp, "flight_rules"), Str(fp, "altitude")),
+                NonRvsm = StripLists.IsNonRvsm(Str(fp, "aircraft"), Str(fp, "aircraft_faa")),
+                CruiseTas = int.TryParse(Str(fp, "cruise_tas"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var tas) ? tas : 0,
+                DepTime = Str(fp, "deptime"),
             };
         }
 

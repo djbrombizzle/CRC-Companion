@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Threading;
@@ -15,7 +16,7 @@ namespace CrcCompanion
     /// Owns the active profile, the windows, the METAR and VATSIM data services and the tray icon.
     /// Finds the facility you're controlling from your CID and keeps the strip lists current.
     /// </summary>
-    public sealed class AppController : IViewHost, ITrayHost, IStripSource, IDisposable
+    public sealed class AppController : IViewHost, ITrayHost, ILiveSource, IDisposable
     {
         private readonly Application _app;
         private readonly ProfileStore _store;
@@ -23,6 +24,11 @@ namespace CrcCompanion
         private readonly DispatcherTimer _saveTimer;
         private readonly DispatcherTimer _clockTimer;
         private readonly LiveDataService _live;
+        private readonly CpdlcService _cpdlc;
+        private readonly FcaService _fca;
+        private readonly FcaWorld _fcaWorld;
+        private List<FcaPilot> _fcaPilots = new List<FcaPilot>();
+        private VatflowNav? _fcaNav;
         private readonly TrayIcon _tray;
 
         private Profile _profile = new Profile();
@@ -33,6 +39,67 @@ namespace CrcCompanion
         private StripViewWindow? _inSector;
         private StripViewWindow? _dept;
         private StatusViewWindow? _status;
+        /// <summary>The other VIEWS grid views, by button label.</summary>
+        private readonly Dictionary<string, ListViewWindow> _grid = new Dictionary<string, ListViewWindow>();
+
+        // ILiveSource
+        public FeedSnapshot? Snapshot { get; private set; }
+        public FlightTracker Tracker { get; } = new FlightTracker();
+        private List<ConflictPair> _conflicts = new List<ConflictPair>();
+        public IReadOnlyList<ConflictPair> Conflicts => _conflicts;
+        private Dictionary<string, Pilot> _pilots = new Dictionary<string, Pilot>(StringComparer.OrdinalIgnoreCase);
+        private NavDatabase? _nav;
+
+        /// <summary>VIEWS grid buttons with a companion view.</summary>
+        public static readonly string[] GridKeys =
+        {
+            "AUTO HO INHIB", "CFR", "CODE", "CONFLCT ALERT", "CRR", "FLIGHT EVENT", "GROUP SUP",
+            "HOLD LIST", "MRP LIST", "SAA FILTER", "UA",
+            "CPDLC ADV", "CPDLC HIST", "CPDLC MSGOUT", "CPDLC TOC SET",
+        };
+
+        private static bool IsCpdlcKey(string key) => key.StartsWith("CPDLC ", StringComparison.Ordinal);
+
+        public CpdlcLog Cpdlc => _cpdlc.Log;
+
+        // MRP (VATFLOW FCAs)
+        public IReadOnlyList<FcaProgram> FcaPrograms => _fca.Programs;
+        public string FcaArtcc => _fca.Artcc;
+        public string FcaStatus => _fca.Error.Length > 0 ? _fca.Error : _fca.LastLoadUtc == null ? "LOADING VATFLOW" : "";
+        public int MrpVersion { get; private set; }
+
+        public FcaSequence Sequence(FcaProgram fca, IReadOnlyList<string>? localOrder) =>
+            FcaEngine.Compute(fca, _fcaPilots, _fcaWorld, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), localOrder);
+
+        /// <summary>Airports, fixes and ARTCC boundaries for the FCA engine.</summary>
+        private sealed class FcaWorld : IFcaWorld
+        {
+            private readonly AppController _c;
+            public FcaWorld(AppController c) { _c = c; }
+
+            public VatflowNav? Nav => _c._fcaNav;
+
+            /// <summary>Exact ICAO lookup, like VATFLOW's airport table (VATSpy airports; CRC's nav data for 4-letter codes it lacks).</summary>
+            public LatLon? Airport(string icao)
+            {
+                icao = (icao ?? "").Trim().ToUpperInvariant();
+                if (icao.Length < 3) return null;
+                var a = _c._live?.Map?.Airport(icao);
+                if (a != null) return a.Pos;
+                return icao.Length == 4 && _c._nav != null && _c._nav.IsAirport(icao) ? _c._nav.Find(icao, _c.ReferencePoint) : null;
+            }
+
+            public LatLon? Fix(string name, LatLon near) => _c._nav?.Find(name, near);
+
+            public bool? InArtcc(string artcc, LatLon p)
+            {
+                var map = _c._live?.Map;
+                if (map == null) return null;
+                var id = (artcc ?? "").Trim().ToUpperInvariant();
+                var b = map.BoundaryForFir(id) ?? (id.Length == 3 ? map.BoundaryForFir("K" + id) : null);
+                return b?.Contains(p);
+            }
+        }
 
         /// <summary>Callsign seen on the last poll, to auto-switch only when you log on or change position.</summary>
         private string _lastSessionCallsign = "";
@@ -63,8 +130,19 @@ namespace CrcCompanion
 
             // Re-evaluate stale/expired marks as time passes.
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
-            _clockTimer.Tick += (_, _) => RefreshViews();
+            _clockTimer.Tick += (_, _) => { RefreshViews(); RefreshGrid(); };
             _clockTimer.Start();
+
+            // vUSAlink hub (CPDLC views): read-only, polled only while a CPDLC view is open.
+            // CRCCOMPANION_HUB_URL points at another hub (e.g. a local test hub); default is the shared KUSA hub.
+            var hubUrl = Environment.GetEnvironmentVariable("CRCCOMPANION_HUB_URL");
+            _cpdlc = new CpdlcService(app.Dispatcher, string.IsNullOrWhiteSpace(hubUrl) ? CpdlcHub.DefaultUrl : hubUrl);
+            _cpdlc.Updated += RefreshCpdlc;
+
+            // VATFLOW FCA programs (MRP view): read-only, polled only while the MRP view is open.
+            _fca = new FcaService(app.Dispatcher, Path.Combine(ProfileStore.DefaultRoot(), "cache"));
+            _fca.Updated += () => { _fcaNav = _fca.Nav; MrpVersion++; RefreshGrid(); };
+            _fcaWorld = new FcaWorld(this);
 
             if (_store.List().Count == 0) _store.Save(new Profile { Name = "DEFAULT" });
             var start = _store.Exists(_settings.ActiveProfile) ? _settings.ActiveProfile : _store.List()[0];
@@ -75,6 +153,13 @@ namespace CrcCompanion
             _live.FeedUpdated += OnLiveData;
 
             _tray = new TrayIcon(this);
+
+            // CRC's own nav data (fixes for CRR, MRP LIST and HOLD LIST), loaded off the UI thread.
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                var nav = NavDatabase.TryLoad(NavDatabase.DefaultPath());
+                if (nav != null) _ = app.Dispatcher.BeginInvoke(() => { _nav = nav; RefreshGrid(); });
+            });
         }
 
         // ---------------- Profiles ----------------
@@ -90,7 +175,7 @@ namespace CrcCompanion
             _store.SaveSettings(_settings);
 
             var wa = WorkArea;
-            _selector = new ViewsSelectorWindow(_profile.Selector, IsViewOn, ToggleView);
+            _selector = new ViewsSelectorWindow(_profile.Selector, IsViewOn, ToggleView, key => ViewFor(key) != null);
             _selector.Changed += MarkDirty;
             _selector.SetScale(UiScale);
             var (sx, sy) = Place(_profile.Selector.X, _profile.Selector.Y, wa.Left + 40, wa.Top + 40);
@@ -102,6 +187,7 @@ namespace CrcCompanion
             _inSector = new StripViewWindow(this, _profile.InSector, StripKind.InSector, this);
             _dept = new StripViewWindow(this, _profile.Dept, StripKind.Departures, this);
             _status = new StatusViewWindow(this, _profile.Status);
+            foreach (var key in GridKeys) _grid[key] = CreateGridView(key, _profile.ExtraFor(key));
             foreach (var v in Views) { v.SetScale(UiScale); if (v.Settings.Visible) ShowView(v); }
 
             UpdateMetarStations();
@@ -110,7 +196,27 @@ namespace CrcCompanion
         }
 
         private IEnumerable<ListViewWindow> Views =>
-            new ListViewWindow?[] { _altim, _wx, _inbound, _inSector, _dept, _status }.Where(v => v != null).Select(v => v!);
+            new ListViewWindow?[] { _altim, _wx, _inbound, _inSector, _dept, _status }.Where(v => v != null).Select(v => v!).Concat(_grid.Values);
+
+        private ListViewWindow CreateGridView(string key, ViewSettings s) => key switch
+        {
+            "AUTO HO INHIB" => new AutoHoInhibitView(this, s, this),
+            "CFR" => new CfrView(this, s, this),
+            "CODE" => new CodeView(this, s, this),
+            "CONFLCT ALERT" => new ConflictAlertView(this, s, this),
+            "CRR" => new CrrView(this, s, this),
+            "FLIGHT EVENT" => new FlightEventView(this, s, this),
+            "GROUP SUP" => new GroupSupView(this, s, this),
+            "HOLD LIST" => new HoldListView(this, s, this),
+            "MRP LIST" => new MrpView(this, s, this),
+            "SAA FILTER" => new SaaFilterView(this, s, this),
+            "UA" => new UnassociatedView(this, s, this),
+            "CPDLC ADV" => new CpdlcAdvView(this, s, this),
+            "CPDLC HIST" => new CpdlcHistView(this, s, this),
+            "CPDLC MSGOUT" => new CpdlcMsgoutView(this, s, this),
+            "CPDLC TOC SET" => new CpdlcTocView(this, s, this),
+            _ => throw new ArgumentException(key),
+        };
 
         private static (int X, int Y) Place(int? x, int? y, int defX, int defY)
         {
@@ -128,6 +234,8 @@ namespace CrcCompanion
             if (v == _inbound) return (wa.Left + 760, wa.Top + 160);
             if (v == _inSector) return (wa.Left + 760, wa.Top + 520);
             if (v == _status) return (wa.Right - 360, wa.Top + 160);
+            int gi = Array.FindIndex(GridKeys, k => _grid.TryGetValue(k, out var g) && g == v);
+            if (gi >= 0) return (wa.Left + 120 + (gi % 4) * 380, wa.Top + 220 + (gi / 4) * 260);
             return (wa.Left + 40, wa.Top + 520);
         }
 
@@ -143,7 +251,8 @@ namespace CrcCompanion
         private void CloseWindows()
         {
             foreach (var v in Views) v.CloseChildren();
-            foreach (var w in new Window?[] { _altim, _wx, _inbound, _inSector, _dept, _status, _selector }) w?.Close();
+            foreach (var w in new Window?[] { _altim, _wx, _inbound, _inSector, _dept, _status, _selector }.Concat(_grid.Values)) w?.Close();
+            _grid.Clear();
             _altim = null; _wx = null; _inbound = null; _inSector = null; _dept = null; _status = null; _selector = null;
         }
 
@@ -235,7 +344,7 @@ namespace CrcCompanion
         public void ResetPositions()
         {
             _profile.Selector.X = _profile.Selector.Y = null;
-            foreach (var s in new[] { _profile.Altim, _profile.Wx, _profile.Inbound, _profile.InSector, _profile.Dept, _profile.Status })
+            foreach (var s in new[] { _profile.Altim, _profile.Wx, _profile.Inbound, _profile.InSector, _profile.Dept, _profile.Status }.Concat(_profile.Extra.Values))
                 s.X = s.Y = null;
             SaveNow();
             LoadProfile(_profile.Name);
@@ -327,6 +436,19 @@ namespace CrcCompanion
         {
             var map = _live?.Map;
             var snap = _live?.Latest;
+            Snapshot = snap;
+            if (snap != null)
+            {
+                _pilots = new Dictionary<string, Pilot>(StringComparer.OrdinalIgnoreCase);
+                foreach (var p in snap.Pilots) _pilots[p.Callsign] = p;
+                _fcaPilots = snap.Pilots.Where(p => p.Plan != null).Select(p => new FcaPilot
+                {
+                    Callsign = p.Callsign, Pos = p.Pos, Alt = p.Altitude, Gs = p.Groundspeed, Hdg = p.Heading,
+                    Dep = p.Plan!.Departure, Arr = p.Plan.Arrival, Route = p.Plan.Route,
+                    FpAlt = p.Plan.AltitudeHundreds * 100, Tas = p.Plan.CruiseTas, DepTime = p.Plan.DepTime,
+                }).ToList();
+            }
+            MrpVersion++;
             Traffic = null;
             Facility = null;
             Connected = false;
@@ -366,6 +488,8 @@ namespace CrcCompanion
 
             if (snap == null) { StatusText = "WAITING FOR VATSIM DATA"; RefreshStrips(); return; }
             Traffic = Core.Traffic.Compute(snap, Facility, _profile.Inbound.Minutes, DateTime.UtcNow);
+            Tracker.Update(snap, Facility);   // ignores a poll it has already seen
+            ComputeConflicts();
             StatusText = "";
             RefreshStrips();
             _tray?.UpdateText();
@@ -373,9 +497,71 @@ namespace CrcCompanion
 
         private void RefreshStrips()
         {
+            UpdateCpdlc();
             _inbound?.Refresh();
             _inSector?.Refresh();
             _dept?.Refresh();
+            RefreshGrid();
+        }
+
+        /// <summary>Points the hub poller at your ARTCC, and runs it only while a CPDLC view is shown.</summary>
+        private void UpdateCpdlc()
+        {
+            bool shown = _grid.Any(kv => IsCpdlcKey(kv.Key) && kv.Value.Settings.Visible);
+            _cpdlc?.Configure(Facility?.Fir, shown);
+            _fca?.Configure(Facility?.Fir, _grid.TryGetValue("MRP LIST", out var mrp) && mrp.Settings.Visible);
+        }
+
+        private void RefreshCpdlc()
+        {
+            foreach (var kv in _grid)
+                if (IsCpdlcKey(kv.Key)) kv.Value.Refresh();
+        }
+
+        private void RefreshGrid()
+        {
+            foreach (var v in _grid.Values) v.Refresh();
+        }
+
+        private void ComputeConflicts()
+        {
+            if (Snapshot == null || Facility == null) { _conflicts = new List<ConflictPair>(); return; }
+            _conflicts = Core.Conflicts.Find(Snapshot, Facility, Tracker.VerticalRateFpm, _profile.ExtraFor("CONFLCT ALERT").SepNm);
+        }
+
+        public void RecomputeConflicts()
+        {
+            ComputeConflicts();
+            RefreshGrid();
+        }
+
+        public Pilot? FindPilot(string callsign) => _pilots.TryGetValue(callsign ?? "", out var p) ? p : null;
+
+        public IReadOnlyList<string> SuppressedGroups => _profile.ExtraFor("GROUP SUP").Items;
+
+        private LatLon ReferencePoint => Facility?.Boundary.Center ?? new LatLon(39.5, -98.35);
+
+        public LatLon? FixPosition(string id) => LookupPoint(id);
+
+        private LatLon? LookupPoint(string id)
+        {
+            var near = ReferencePoint;
+            var hit = _nav?.Find(id, near);
+            if (hit != null) return hit;
+            var map = _live?.Map;
+            var a = map?.Airport(id) ?? (id.Length == 3 ? map?.Airport("K" + id) : null);
+            return a?.Pos;
+        }
+
+        public (LatLon Pos, Locations.Kind Kind, string Name)? ResolveLocation(string text) => Locations.Parse(text, LookupPoint);
+
+        public string? NearestFix(LatLon p, double maxNm) => _nav?.NearestFix(p, maxNm)?.Id;
+
+        public bool IsAirportId(string id)
+        {
+            if (_nav != null && (_nav.IsAirport(id) || (id.Length == 3 && _nav.IsAirport("K" + id)))) return true;
+            var map = _live?.Map;
+            return map?.Airport(id) != null || (id.Length == 3 && map?.Airport("K" + id) != null);
         }
 
         // ---------------- Views ----------------
@@ -390,7 +576,7 @@ namespace CrcCompanion
             ViewsSelectorWindow.DeptKey => _dept,
             ViewsSelectorWindow.InSectorKey => _inSector,
             ViewsSelectorWindow.StatusKey => _status,
-            _ => null,
+            _ => _grid.TryGetValue(key, out var g) ? g : null,
         };
 
         private void ToggleView(string key)
@@ -410,6 +596,7 @@ namespace CrcCompanion
                 view.Hide();
             }
             _selector?.Refresh();
+            UpdateCpdlc();
             MarkDirty();
         }
 
@@ -450,6 +637,8 @@ namespace CrcCompanion
             _saveTimer.Stop();
             Metar.Dispose();
             _live.Dispose();
+            _cpdlc.Dispose();
+            _fca.Dispose();
             _tray.Dispose();
         }
     }
