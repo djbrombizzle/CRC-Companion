@@ -2,6 +2,8 @@
 
 A Windows app that runs next to VATSIM's CRC and draws ERAM views in their own movable windows. That lets them sit outside CRC's radar display, for example in the side areas of a 43" 4K R-side layout, while looking like CRC's own views.
 
+**[Read the user manual](docs/MANUAL.md)** for every view, menu and setting.
+
 ## Download
 
 Get **CRCCompanion.exe** from the [latest release](../../releases/tag/latest). It's a single file with nothing to install. A new build is published automatically on every push to `main`.
@@ -68,7 +70,7 @@ In ERAM the UA carries GI messages from other positions and UTMs from the automa
 | `TMU` | VATFLOW Airport TMU (the TBFM page), through vatflow-hub | Ground stops, restrictions and arrival rate programs (AAR, MIT, gate MITs) that name one of your ARTCC's airports or have your ARTCC as requesting or providing facility, e.g. `TMU ARR RATE KDCA AAR 32 CAPPS 20MIT`. A change is sent as `AMEND`, one that ends as `CANCEL`. |
 | `FLOW` | VATFLOW FCA programs (the same Supabase table as MRP) | An FCA for your ARTCC turned on, amended, or turned off (`CANCEL`). |
 
-The vUSAlink hub is polled every 10 s, only while the UA view (or a CPDLC view) is open. For TMU the companion listens on vatflow-hub's WebSocket, which sends the whole Airport TMU state on connect and after every change; it never sends anything (only signed-in TMU editors can change it) and connects only while the UA view is open. `CRCCOMPANION_VATFLOW_HUB_URL` points it at another vatflow-hub. If a source isn't answering, its state shows in yellow at the top of the text area (`HUB DOWN`, `VATFLOW TMU DOWN`, `VATFLOW DOWN`). `NO GI FROM HUB` means the hub doesn't yet send GI notes to read-only viewers: the companion asks the hub's view-only monitor for them, and the hub needs a small change to return them there (the EDST gets them from its signed-in poll).
+The vUSAlink hub is polled every 10 s, only while the UA view (or a CPDLC view) is open. For TMU the companion listens on vatflow-hub's WebSocket, which sends the whole Airport TMU state on connect and after every change; it never sends anything (only signed-in TMU editors can change it) and connects only while the UA view is open. `CRCCOMPANION_VATFLOW_HUB_URL` points it at another vatflow-hub. If a source isn't answering, its state shows in yellow at the top of the text area (`HUB DOWN`, `VATFLOW TMU DOWN`, `VATFLOW DOWN`). GI notes come from the hub's view-only monitor (the request asks for them with a GI cursor); a hub without that support shows `NO GI FROM HUB`.
 
 ## CIDs from the vUSALink EDST app
 
