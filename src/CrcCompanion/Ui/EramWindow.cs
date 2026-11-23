@@ -26,6 +26,9 @@ namespace CrcCompanion.Ui
         /// <summary>Raised after the user places the window at a new position.</summary>
         public event Action<EramWindow>? Repositioned;
 
+        /// <summary>Raised when a move is cancelled (Esc or right-click); the window is back where it was.</summary>
+        public event Action<EramWindow>? RepositionCancelled;
+
         /// <summary>Raised when typing mode ends (focus left the window, or EndKeyboard was called).</summary>
         public event Action? KeyboardEnded;
 
@@ -187,6 +190,7 @@ namespace CrcCompanion.Ui
             // The placing click lands on this window; don't let it act as a new click.
             _suppressClicksUntil = DateTime.UtcNow.AddMilliseconds(400);
             if (commit) Repositioned?.Invoke(this);
+            else RepositionCancelled?.Invoke(this);
         }
     }
 }

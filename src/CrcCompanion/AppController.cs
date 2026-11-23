@@ -43,6 +43,7 @@ namespace CrcCompanion
 
         private Profile _profile = new Profile();
         private ViewsSelectorWindow? _selector;
+        private MacroManager? _macros;
         private AltimViewWindow? _altim;
         private WxViewWindow? _wx;
         private StripViewWindow? _inbound;
@@ -120,6 +121,11 @@ namespace CrcCompanion
         /// </summary>
         private void CheckQfs()
         {
+            if (_macros?.WantsQfs == true)
+            {
+                ReloadEdstCids();
+                _macros.CheckQfs(_edstCids);
+            }
             if (!(_grid.TryGetValue("CFR", out var v) && v.Settings.Visible && v is CfrView cfr)) { _qfSince = null; return; }
             ReloadEdstCids();
             if (_qfSince == null) { _qfSince = DateTime.UtcNow; return; }   // only QFs from now on
@@ -132,6 +138,7 @@ namespace CrcCompanion
         /// <summary>Middle-click in INBND / DEPT / IN SECTOR: the flight goes to CFR, which opens if hidden.</summary>
         public void AddToCfr(string callsign)
         {
+            if (_macros?.TryApply(callsign) == true) return;   // a macro waiting for a flight takes it
             if (!(_grid.TryGetValue("CFR", out var v) && v is CfrView cfr)) return;
             if (!v.Settings.Visible) SetViewVisible(v, true);
             cfr.Add(callsign);
@@ -267,6 +274,10 @@ namespace CrcCompanion
             var (sx, sy) = Place(_profile.Selector.X, _profile.Selector.Y, wa.Left + 40, wa.Top + 40);
             _selector.ShowAt(sx, sy);
 
+            _macros = new MacroManager(_profile.Record, () => UiScale, MarkDirty);
+            var (rx, ry) = Place(_profile.Record.X, _profile.Record.Y, wa.Left + 40, wa.Top + 40 + (int)(130 * UiScale));
+            _macros.Show(rx, ry, Place);
+
             _altim = new AltimViewWindow(this, _profile.Altim);
             _wx = new WxViewWindow(this, _profile.Wx);
             _inbound = new StripViewWindow(this, _profile.Inbound, StripKind.Inbound, this);
@@ -337,6 +348,8 @@ namespace CrcCompanion
         private void CloseWindows()
         {
             foreach (var v in Views) v.CloseChildren();
+            _macros?.Close();
+            _macros = null;
             foreach (var w in new Window?[] { _altim, _wx, _inbound, _inSector, _dept, _status, _selector }.Concat(_grid.Values)) w?.Close();
             _grid.Clear();
             _altim = null; _wx = null; _inbound = null; _inSector = null; _dept = null; _status = null; _selector = null;
@@ -423,6 +436,7 @@ namespace CrcCompanion
         {
             _profile.UiScale = scale;
             _selector?.SetScale(scale);
+            _macros?.SetScale(scale);
             foreach (var v in Views) v.SetScale(scale);
             MarkDirty();
         }
@@ -430,6 +444,7 @@ namespace CrcCompanion
         public void ResetPositions()
         {
             _profile.Selector.X = _profile.Selector.Y = null;
+            _profile.Record.X = _profile.Record.Y = null;
             foreach (var s in new[] { _profile.Altim, _profile.Wx, _profile.Inbound, _profile.InSector, _profile.Dept, _profile.Status }.Concat(_profile.Extra.Values))
                 s.X = s.Y = null;
             SaveNow();

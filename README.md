@@ -40,6 +40,14 @@ Each opens from its VIEWS button and has the usual M menu (O/T, BORDER, LINES, F
 
 Fixes and FRDs are read from CRC's own `%LOCALAPPDATA%\CRC\NavData.dat`. Without it, only airports resolve. Bearings are true, not magnetic.
 
+## RECORD (macros)
+
+ERAM's RECORD toolbar, under the VIEWS selector. See [the manual](docs/MANUAL.md#6-record-macros) for details.
+- **MSG #** records up to six commands, then a label of up to seven characters (default: the first six characters). The new button waits in the MSG slot until you move it by its tear-off bar. **MSG MAX** at 99.
+- **MACRO EDIT** edits a macro's commands (up to 25 lines) and label. **MACRO DELETE** deletes: left-click to mark with an X, then middle-click to delete. **CLR ALL MACROS** needs two clicks (burnt orange in between).
+- **Using one:** a one-command macro is typed into CRC's MCA, and you click the track in CRC to add the flight ID. A macro with several commands waits for one flight, picked by a QF in CRC (needs vUSALink App or Lite) or a middle-click in INBND, DEPT or IN SECTOR. Each command is then typed with the flight ID.
+- **Typing into CRC:** uses the vUSALink app's CRC echo method: SendInput into CRC's ERAM window only, once it's in front.
+
 ## CFR (Continuous Flight Plan Readout)
 
 Laid out like ERAM's CFR view (manual chapter 8): title bar with DEL ALL and SHOW FIELDS, then FLID TYP BCN SPD FIX TIM ALT RTE/RMK with a rule under each flight plan. The readouts update from VATSIM every poll.
