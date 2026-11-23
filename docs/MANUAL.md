@@ -238,7 +238,7 @@ Click the lit button again to cancel. These macros take one flight only; ERAM gi
 2. Click the macro button.
 3. The companion clears the MCA and types every command of the macro with that flight ID and Enter, for example `QQ P140 151` then `E1S 151`.
 
-It works for one-command macros too. The typed flight ID is only used when it's the only thing on the MCA line, typed in the last minute. If you clicked in CRC since typing it, or the line holds anything else, the macro works the normal way instead. To know what's on the MCA line, the companion watches the keys you type while CRC's ERAM window is in front, only while this option is on. It ignores keys typed into other programs and keeps nothing but the current line, in memory.
+It works for one-command macros too. The typed flight ID (3 to 7 letters or digits) is only used when it's the only thing you typed since your last click in CRC or your last Esc or Enter, within the last minute. Otherwise the macro works the normal way. To know what's on the MCA line, the companion watches the keys you type while CRC's ERAM window is in front, only while this option is on. It ignores keys typed into other programs and keeps nothing but the current line, in memory.
 
 **How the commands get into CRC.** CRC has no command interface, so the companion types the commands the same way the vUSALink app's CRC echo does:
 - It brings CRC's ERAM window to the front and sends the keystrokes.

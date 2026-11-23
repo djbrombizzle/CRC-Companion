@@ -68,8 +68,8 @@ namespace CrcCompanion.Services
                     bool injected = (k.flags & 0x10) != 0;
                     if (!injected && EramInFront())
                     {
-                        bool shift = (GetKeyState(0x10) & 0x8000) != 0;
-                        bool ctrlAlt = (GetKeyState(0x11) & 0x8000) != 0 || (k.flags & 0x20) != 0;
+                        bool shift = (GetAsyncKeyState(0x10) & 0x8000) != 0;
+                        bool ctrlAlt = (GetAsyncKeyState(0x11) & 0x8000) != 0 || (k.flags & 0x20) != 0;
                         _tracker.Key((int)k.vkCode, shift, ctrlAlt, DateTime.UtcNow);
                     }
                 }
@@ -117,7 +117,7 @@ namespace CrcCompanion.Services
         [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
         [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
         [DllImport("user32.dll")] private static extern IntPtr GetAncestor(IntPtr h, uint flags);
-        [DllImport("user32.dll")] private static extern short GetKeyState(int vk);
+        [DllImport("user32.dll")] private static extern short GetAsyncKeyState(int vk);
         [DllImport("user32.dll")] private static extern IntPtr WindowFromPoint(POINT p);
     }
 }

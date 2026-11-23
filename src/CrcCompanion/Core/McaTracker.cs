@@ -12,7 +12,8 @@ namespace CrcCompanion.Core
     {
         /// <summary>A typed flight ID older than this isn't used.</summary>
         public static readonly TimeSpan MaxAge = TimeSpan.FromSeconds(60);
-        public const int MinFlid = 2, MaxFlid = 7;
+        /// <summary>CRC CIDs are 3 characters and callsigns at least 3, so shorter text is never taken as a flight ID.</summary>
+        public const int MinFlid = 3, MaxFlid = 7;
 
         private string _text = "";
         private bool _known = true;
@@ -41,8 +42,12 @@ namespace CrcCompanion.Core
             _text += c.Value;
         }
 
-        /// <summary>A mouse click in CRC: it may have added a flight ID or sent the line, so the content is unknown.</summary>
-        public void Clicked() => _known = false;
+        /// <summary>
+        /// A mouse click in CRC. It may have sent the line or added a flight ID, so tracking starts over from an empty
+        /// line: only what's typed after the click counts. (A macro clears the MCA with Esc before typing, so text
+        /// already there before the click doesn't matter.)
+        /// </summary>
+        public void Clicked() => Clear();
 
         /// <summary>The MCA is empty (Esc or Enter, or the companion just typed and sent a line).</summary>
         public void Clear()
@@ -52,7 +57,7 @@ namespace CrcCompanion.Core
         }
 
         /// <summary>
-        /// The flight ID in the MCA: one word of 2-7 letters and digits (a CRC CID like 151, or a callsign), typed in
+        /// The flight ID in the MCA: one word of 3-7 letters and digits (a CRC CID like 151, or a callsign), typed in
         /// the last minute and nothing else on the line. Null otherwise.
         /// </summary>
         public string? Flid(DateTime now)
