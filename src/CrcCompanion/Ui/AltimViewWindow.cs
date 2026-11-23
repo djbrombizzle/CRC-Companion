@@ -40,7 +40,9 @@ namespace CrcCompanion.Ui
             int markerBlock = Settings.Tearoff ? m.MarkerW + EntryGap : 0;
             int entryW = markerBlock + m.TextWidth(TextChars) + EntryGap;
 
-            var stations = Settings.Stations;
+            // Shown in alphabetical order, whatever order they were entered in.
+            var stations = System.Linq.Enumerable.ToList(
+                System.Linq.Enumerable.OrderBy(Settings.Stations, s => s, StringComparer.OrdinalIgnoreCase));
             int lines = Math.Max(1, Settings.Lines);
             int capacity = lines * Math.Max(1, Settings.Cols);
             int shown = Math.Min(stations.Count, capacity);

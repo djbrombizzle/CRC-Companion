@@ -351,7 +351,7 @@ Lines can't be resized; delete one and draw it again.
 
 ### ALTIM SET (Altimeter Settings)
 
-Shows the station, observation time and altimeter for each station you list, in columns.
+Shows the station, observation time and altimeter for each station you list, in columns. Stations are in alphabetical order, whatever order you enter them in.
 
 | Menu | |
 |---|---|
