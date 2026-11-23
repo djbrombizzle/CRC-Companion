@@ -40,6 +40,8 @@ namespace CrcCompanion.Ui
         string UaStatus { get; }
         /// <summary>CRC CID and owning sector the vUSALink EDST app learned from a QF, or null.</summary>
         EdstCidBook.Entry? EdstCid(string callsign);
+        /// <summary>The aircraft the vUSALink EDST app learned this CRC CID for, or null.</summary>
+        EdstCidBook.Entry? EdstCidByCid(string cid);
     }
 
     /// <summary>One body line: a heading (spaced like a WX report break) or an entry.</summary>

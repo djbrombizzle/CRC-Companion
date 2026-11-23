@@ -128,16 +128,17 @@ namespace CrcCompanion.Ui
         private void OpenQf() => OpenEntry("QF R  FLID / -FLID", () => Settings.Items, Add);
 
         /// <summary>
-        /// Applies a QF entry ("QF R UAL123", "UAL123 DAL45", "-UAL123"). Used by the entry box, by QF readouts
+        /// Applies a QF entry ("QF R UAL123", "QF R 151" by CRC CID, "UAL123 DAL45", "-UAL123"). Used by the entry box, by QF readouts
         /// from CRC (through the vUSALink app) and by middle-clicks in INBND / DEPT / IN SECTOR. Added flights
         /// show their FLID in green. Returns feedback ("ADD UAL123", "NO FP UAL9").
         /// </summary>
         public string Add(string text)
         {
-            var feedback = Cfr.Apply(Settings.Items, text, Entries, cs => FindPlan(cs).Plan != null);
+            var named = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var feedback = Cfr.Apply(Settings.Items, text, Entries, cs => FindPlan(cs).Plan != null,
+                cid => Live.EdstCidByCid(cid)?.Callsign, named);
             var now = DateTime.UtcNow;
-            var named = new HashSet<string>(text.ToUpperInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries));
-            foreach (var cs in Settings.Items) if (named.Contains(cs.ToUpperInvariant())) _addedUtc[cs] = now;
+            foreach (var cs in Settings.Items) if (named.Contains(cs)) _addedUtc[cs] = now;
             if (_addedUtc.Count > 0) _greenTimer.Start();
             Changed();
             return feedback;

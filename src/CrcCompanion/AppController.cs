@@ -99,6 +99,13 @@ namespace CrcCompanion
             return _edstCids.Find(callsign);
         }
 
+        /// <summary>The aircraft the vUSALink EDST app learned this CRC CID for, or null.</summary>
+        public EdstCidBook.Entry? EdstCidByCid(string cid)
+        {
+            if (DateTime.UtcNow - _edstCidsChecked > TimeSpan.FromSeconds(5)) ReloadEdstCids();
+            return _edstCids.FindByCid(cid);
+        }
+
         /// <summary>Re-reads the vUSALink app's cids.json if it changed. A half-written file is retried next time.</summary>
         private void ReloadEdstCids()
         {

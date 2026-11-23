@@ -366,7 +366,7 @@ ERAM's Continuous Flight Plan Readout view (ERAM manual chapter 8). It keeps up 
 |---|---|
 | Add from CRC | With CFR open, QF the aircraft in CRC: **middle-click its data block**, or type `QF UAL123`. It appears in CFR within a few seconds. Needs vUSALink App or vUSALink-Lite running (see below). |
 | Add from a list | **Middle-click** the flight in INBND, DEPT or IN SECTOR. CFR opens if it's hidden. |
-| Add by typing | Left-click anywhere in the view. In the entry box type `QF R UAL123`, or just `UAL123`. Several at once work: `UAL123 DAL45`. |
+| Add by typing | Left-click anywhere in the view. In the entry box type `QF R UAL123`, or just `UAL123`. Several at once work: `UAL123 DAL45`. A CRC CID works too (`QF R 151`) once vUSALink App or Lite has seen that aircraft's QF in CRC; otherwise it says `NO FP`. |
 | Remove one | Middle-click its FLID, then click **DELETE UAL123**. Or type `-UAL123` in the entry box. |
 | Remove all | **DEL ALL** in the title bar. |
 

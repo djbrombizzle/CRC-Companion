@@ -69,5 +69,23 @@ internal static class CfrTests
         eq("re-entry moves last", "AAL3,SWA4,DAL2", string.Join(",", items));
         eq("remove", "DEL AAL3", Cfr.Apply(items, "-AAL3", 3, Has));
         eq("after remove", "SWA4,DAL2", string.Join(",", items));
+
+        // CRC CIDs, looked up through the vUSALink app's cids.json
+        var book = new EdstCidBook();
+        book.Replace(EdstCidBook.Parse(@"[
+            {""cid"":""151"",""callsign"":""SKW5646"",""at"":""2026-11-22T17:00:00Z""},
+            {""cid"":""200"",""callsign"":""OLD1"",""at"":""2026-11-22T16:00:00Z""},
+            {""cid"":""200"",""callsign"":""NEW1"",""at"":""2026-11-22T17:00:00Z""}]"));
+        eq("find by CID", "SKW5646", book.FindByCid("151")?.Callsign);
+        eq("reused CID: latest QF wins", "NEW1", book.FindByCid("200")?.Callsign);
+        eq("unknown CID", null, book.FindByCid("999")?.Callsign);
+        var cidItems = new List<string>();
+        var named = new List<string>();
+        string? Cid(string c) => book.FindByCid(c)?.Callsign;
+        eq("QF R by CID", "ADD SKW5646", Cfr.Apply(cidItems, "QF R 151", 5, Has, Cid, named));
+        eq("named after CID lookup", "SKW5646", string.Join(",", named));
+        eq("unknown CID has no FP", "NO FP 999", Cfr.Apply(cidItems, "999", 5, cs => cs == "SKW5646", Cid));
+        eq("remove by CID", "DEL SKW5646", Cfr.Apply(cidItems, "-151", 5, Has, Cid));
+        eq("callsign still works", "ADD UAL1", Cfr.Apply(cidItems, "UAL1", 5, Has, Cid));
     }
 }

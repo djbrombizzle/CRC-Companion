@@ -161,26 +161,42 @@ namespace CrcCompanion.Core
         /// <summary>
         /// Applies a QF entry to the readout list (oldest first): "QF R UAL123", "UAL123", "UAL123 DAL45", "-UAL123".
         /// New flights go last; the oldest drop off past <paramref name="max"/>. A flight already listed moves last.
-        /// <paramref name="exists"/> says whether a flight plan can be found. Returns feedback.
+        /// <paramref name="exists"/> says whether a flight plan can be found. <paramref name="cidToCallsign"/>, when
+        /// given, turns a CRC CID ("151") into its callsign: always for an all-digit FLID, else only when the FLID
+        /// isn't a listed or known callsign.
+        /// Returns feedback. <paramref name="named"/> gets the callsigns the entry named (after CID lookup).
         /// </summary>
-        public static string Apply(List<string> items, string text, int max, Func<string, bool> exists)
+        public static string Apply(List<string> items, string text, int max, Func<string, bool> exists,
+            Func<string, string?>? cidToCallsign = null, ICollection<string>? named = null)
         {
             var toks = (text ?? "").ToUpperInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
             if (toks.Count > 0 && toks[0] == "QF") toks.RemoveAt(0);
             if (toks.Count > 0 && toks[0] == "R") toks.RemoveAt(0);
             var added = new List<string>(); var removed = new List<string>(); var none = new List<string>();
+            string Resolve(string flid, bool removing)
+            {
+                if (cidToCallsign == null) return flid;
+                bool digits = flid.All(char.IsDigit);   // a callsign is never all digits; a CRC CID usually is
+                bool listed = items.Any(i => string.Equals(i, flid, StringComparison.OrdinalIgnoreCase));
+                if (!digits && (listed || (!removing && exists(flid)))) return flid;
+                var cs = cidToCallsign(flid);
+                return string.IsNullOrEmpty(cs) ? flid : cs.ToUpperInvariant();
+            }
             foreach (var tok in toks)
             {
                 if (tok.StartsWith("-", StringComparison.Ordinal))
                 {
-                    var cs = tok.Substring(1);
+                    var cs = Resolve(tok.Substring(1), true);
+                    named?.Add(cs);
                     if (items.RemoveAll(i => string.Equals(i, cs, StringComparison.OrdinalIgnoreCase)) > 0) removed.Add(cs);
                     continue;
                 }
-                if (!exists(tok)) { none.Add(tok); continue; }
-                items.RemoveAll(i => string.Equals(i, tok, StringComparison.OrdinalIgnoreCase));
-                items.Add(tok);
-                added.Add(tok);
+                var flid = Resolve(tok, false);
+                if (!exists(flid)) { none.Add(tok); continue; }
+                named?.Add(flid);
+                items.RemoveAll(i => string.Equals(i, flid, StringComparison.OrdinalIgnoreCase));
+                items.Add(flid);
+                added.Add(flid);
             }
             while (items.Count > max) items.RemoveAt(0);
             return string.Join("  ", new[]

@@ -374,6 +374,18 @@ namespace CrcCompanion.Core
 
         public Entry? Find(string callsign) => _byCallsign.TryGetValue(callsign ?? "", out var e) ? e : null;
 
+        /// <summary>
+        /// The aircraft with this CRC CID, or null. If two callsigns carry it (a CID reused after a pilot left),
+        /// the one QF'd most recently wins.
+        /// </summary>
+        public Entry? FindByCid(string cid)
+        {
+            cid = (cid ?? "").Trim();
+            if (cid.Length == 0) return null;
+            return _byCallsign.Values.Where(e => string.Equals(e.Cid, cid, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(e => e.At).FirstOrDefault();
+        }
+
         /// <summary>Parses cids.json: [{cid, callsign, sector, logon, verified, at, lastSeen}].</summary>
         public static Dictionary<string, Entry> Parse(string json)
         {
