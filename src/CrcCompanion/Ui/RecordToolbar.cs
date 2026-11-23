@@ -21,6 +21,8 @@ namespace CrcCompanion.Ui
         public static readonly Brush BurntOrange = Make(0xC8, 0x5A, 0x1E);
         public static readonly Brush ListRow = Make(0x3C, 0x3C, 0x3C);
         public static readonly Brush DeleteX = Make(0xE0, 0x5A, 0x50);
+        /// <summary>A saved macro button at rest, cyan as on the ERAM display.</summary>
+        public static readonly Brush MacroCyan = Make(0x1C, 0xC4, 0xC4);
 
         private static Brush Make(byte r, byte g, byte b) { var x = new SolidColorBrush(Color.FromRgb(r, g, b)); x.Freeze(); return x; }
 
@@ -130,7 +132,7 @@ namespace CrcCompanion.Ui
                 }
                 else if (pending != null && !_mgr.Tearing)
                 {
-                    TbCell.WithBar(p, X(0), y, pending.Label, _mgr.IsArmed(pending) ? Eram.TbOn : Eram.TbOff,
+                    TbCell.WithBar(p, X(0), y, pending.Label, _mgr.IsArmed(pending) ? Eram.TbOn : TbCell.MacroCyan,
                         onBody: () => _mgr.MacroClicked(pending, MouseButton.Left), onBar: () => _mgr.TearOff(pending));
                     if (_mgr.IsMarked(pending)) TbCell.Cross(p, X(0) + TbCell.BodyX, y + 1, TbCell.BodyW, TbCell.BodyH, TbCell.DeleteX);
                 }
@@ -262,7 +264,7 @@ namespace CrcCompanion.Ui
 
         private Size Paint(Painter p)
         {
-            TbCell.WithBar(p, 0, 0, Macro.Label, _mgr.IsArmed(Macro) ? Eram.TbOn : Eram.TbOff,
+            TbCell.WithBar(p, 0, 0, Macro.Label, _mgr.IsArmed(Macro) ? Eram.TbOn : TbCell.MacroCyan,
                 onBody: null, onBar: BeginReposition);
             p.Hit(TbCell.BodyX, 0, TbCell.BodyW + 1, TbCell.H, b => _mgr.MacroClicked(Macro, b));
             if (_mgr.IsMarked(Macro)) TbCell.Cross(p, TbCell.BodyX, TbCell.BodyY, TbCell.BodyW, TbCell.BodyH, TbCell.DeleteX);
