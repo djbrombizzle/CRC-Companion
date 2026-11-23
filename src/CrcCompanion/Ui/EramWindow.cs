@@ -29,6 +29,9 @@ namespace CrcCompanion.Ui
         /// <summary>Raised when a move is cancelled (Esc or right-click); the window is back where it was.</summary>
         public event Action<EramWindow>? RepositionCancelled;
 
+        /// <summary>Raised on every step of a move (and when a cancelled move snaps back), so attached windows can follow.</summary>
+        public event Action<EramWindow>? Moved;
+
         /// <summary>Raised when typing mode ends (focus left the window, or EndKeyboard was called).</summary>
         public event Action? KeyboardEnded;
 
@@ -165,10 +168,12 @@ namespace CrcCompanion.Ui
         {
             Native.GetCursorPos(out var p);
             Native.MoveWindow(Hwnd, p.X - _grabOffset.X, p.Y - _grabOffset.Y);
+            Moved?.Invoke(this);
 
             if (Native.IsDown(Native.VK_ESCAPE) || Native.IsDown(Native.VK_RBUTTON))
             {
                 Native.MoveWindow(Hwnd, _origin.Left, _origin.Top);
+                Moved?.Invoke(this);
                 EndReposition(false);
                 return;
             }

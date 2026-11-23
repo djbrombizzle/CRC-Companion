@@ -52,7 +52,25 @@ namespace CrcCompanion.Ui
             Surface.Paint = Paint;
             Surface.Wheel = (d, _) => OnBodyWheel(d);
             Repositioned += _ => SavePosition();
+            Moved += _ => FollowView();
             Closed += (_, _) => CloseChildren();
+        }
+
+        /// <summary>Where the pop-up and entry box sit relative to the view's top-left, so they move with it.</summary>
+        private (int X, int Y) _popupOffset, _entryOffset;
+
+        /// <summary>Keeps the M menu, the pop-up and the entry box attached while the view moves.</summary>
+        private void FollowView()
+        {
+            var r = ScreenRect;
+            if (_menu != null)
+            {
+                var mr = _menu.ScreenRect;
+                _menu.MoveTo(r.Left - (mr.Right - mr.Left), r.Top);
+            }
+            _popup?.MoveTo(r.Left + _popupOffset.X, r.Top + _popupOffset.Y);
+            if (_entry != null)
+                Native.MoveWindow(new System.Windows.Interop.WindowInteropHelper(_entry).Handle, r.Left + _entryOffset.X, r.Top + _entryOffset.Y);
         }
 
         public void SavePosition()
@@ -172,7 +190,7 @@ namespace CrcCompanion.Ui
         public void ToggleMenu()
         {
             if (_menu != null) { _menu.Close(); return; }
-            _menu = new MenuWindow(MenuTitle, BuildMenuRows());
+            _menu = new MenuWindow(MenuTitle, BuildMenuRows()) { TitleDrag = BeginReposition };
             _menu.SetScale(Host.UiScale);
             _menu.Closed += (_, _) => _menu = null;
             var r = ScreenRect;
@@ -222,6 +240,7 @@ namespace CrcCompanion.Ui
             _entry.Closed += (_, _) => _entry = null;
             var r = ScreenRect;
             _entry.ShowNear(r.Left, r.Bottom + 4);
+            _entryOffset = (0, r.Bottom + 4 - r.Top);
         }
 
         /// <summary>Popup with a DELETE row for one station, as in CRC.</summary>
@@ -240,12 +259,14 @@ namespace CrcCompanion.Ui
         protected void OpenPopup(string title, List<MenuRow> rows, Action? onClosed = null)
         {
             _popup?.Close();
-            var popup = new MenuWindow(title, rows);
+            var popup = new MenuWindow(title, rows) { TitleDrag = BeginReposition };
             _popup = popup;
             popup.SetScale(Host.UiScale);
             popup.Closed += (_, _) => { if (ReferenceEquals(_popup, popup)) _popup = null; onClosed?.Invoke(); };
             Native.GetCursorPos(out var c);
             popup.ShowAt(c.X + 8, c.Y + 8);
+            var r = ScreenRect;
+            _popupOffset = (c.X + 8 - r.Left, c.Y + 8 - r.Top);
         }
 
         protected void ClosePopup() => _popup?.Close();

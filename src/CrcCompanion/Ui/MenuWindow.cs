@@ -116,6 +116,12 @@ namespace CrcCompanion.Ui
         private static readonly EramMetrics M = new EramMetrics(2);
         private const int TextInset = 5;
 
+        /// <summary>
+        /// What a click on the title does. A view's menu sets this to move the view (the menu stays attached and
+        /// follows it); left null, the title moves the menu itself.
+        /// </summary>
+        public Action? TitleDrag { get; set; }
+
         public MenuWindow(string title, IReadOnlyList<MenuRow> rows)
         {
             _title = title;
@@ -190,7 +196,7 @@ namespace CrcCompanion.Ui
             p.Fill(Eram.MenuLine, 1 + titleW, y, 1, rh);
             p.TextCentered("X", 2 + titleW, box, y + gt, m, Eram.MenuText);
             p.Hit(2 + titleW, y, box, rh, _ => Close());
-            p.Hit(1, y, titleW, rh, _ => BeginReposition());
+            p.Hit(1, y, titleW, rh, _ => (TitleDrag ?? BeginReposition)());
             y += rh;
 
             foreach (var row in _rows)

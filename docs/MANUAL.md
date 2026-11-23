@@ -67,7 +67,7 @@ The views copy CRC's ERAM look and mouse conventions.
 
 | To | Do this |
 |---|---|
-| Move a view or a menu | Click its title, move the mouse, click again to place it. Esc or a right-click cancels. |
+| Move a view | Click its title, move the mouse, click again to place it. Esc or a right-click cancels. Its M menu, any pop-up and its entry box stay attached and move with it; clicking the menu's title moves the view too. |
 | Move the VIEWS, RECORD, COMMAND MENUS or DRAW button, or a macro button | Click the olive bar at its left, move, click again. |
 | Hide a view | Click the **-** at the right of its title bar, or click its button in the VIEWS selector. |
 | Put every view back on screen | Tray menu → **Reset view positions**. |
