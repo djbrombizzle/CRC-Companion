@@ -23,6 +23,8 @@ namespace CrcCompanion.Ui
         public static readonly Brush DeleteX = Make(0xE0, 0x5A, 0x50);
         /// <summary>A saved macro button at rest, cyan as on the ERAM display (dark enough for the white label).</summary>
         public static readonly Brush MacroCyan = Make(0x0E, 0x86, 0x8A);
+        /// <summary>Macro button label: pure white, brighter than the toolbar's gray text.</summary>
+        public static readonly Brush MacroText = Make(0xFF, 0xFF, 0xFF);
 
         private static Brush Make(byte r, byte g, byte b) { var x = new SolidColorBrush(Color.FromRgb(r, g, b)); x.Freeze(); return x; }
 
@@ -31,12 +33,14 @@ namespace CrcCompanion.Ui
             ToolbarFont.Label(p, label, x, y, w, b);
 
         /// <summary>A button with a tear-off bar (VIEWS style).</summary>
-        public static void WithBar(Painter p, double x, double y, string label, Brush body, Action? onBody, Action? onBar, Brush? bar = null)
+        public static void WithBar(Painter p, double x, double y, string label, Brush body, Action? onBody, Action? onBar,
+            Brush? bar = null, bool macro = false)
         {
             p.Fill(Eram.TbBorder, x, y, W, H);
             p.Fill(bar ?? Eram.TbTearoff, x + BarX, y + BodyY, BarW, BodyH);
             p.Fill(body, x + BodyX, y + BodyY, BodyW, BodyH);
-            if (ToolbarLabels.Has(label)) p.Runs(ToolbarLabels.Get(label), x + BodyX, y + BodyY, Eram.TbText);
+            if (macro) ToolbarFont.BigLabel(p, label, x + BodyX, y + BodyY, BodyW, BodyH, MacroText);
+            else if (ToolbarLabels.Has(label)) p.Runs(ToolbarLabels.Get(label), x + BodyX, y + BodyY, Eram.TbText);
             else Label(p, label, x + BodyX, y + BodyY, BodyW, BodyH, Eram.TbText);
             if (onBar != null) p.Hit(x, y, BodyX, H, _ => onBar());
             if (onBody != null) p.Hit(x + BodyX, y, BodyW + 1, H, _ => onBody());
@@ -133,7 +137,7 @@ namespace CrcCompanion.Ui
                 else if (pending != null && !_mgr.Tearing)
                 {
                     TbCell.WithBar(p, X(0), y, pending.Label, _mgr.IsArmed(pending) ? Eram.TbOn : TbCell.MacroCyan,
-                        onBody: () => _mgr.MacroClicked(pending, MouseButton.Left), onBar: () => _mgr.TearOff(pending));
+                        onBody: () => _mgr.MacroClicked(pending, MouseButton.Left), onBar: () => _mgr.TearOff(pending), macro: true);
                     if (_mgr.IsMarked(pending)) TbCell.Cross(p, X(0) + TbCell.BodyX, y + 1, TbCell.BodyW, TbCell.BodyH, TbCell.DeleteX);
                 }
                 else if (pending == null)
@@ -265,7 +269,7 @@ namespace CrcCompanion.Ui
         private Size Paint(Painter p)
         {
             TbCell.WithBar(p, 0, 0, Macro.Label, _mgr.IsArmed(Macro) ? Eram.TbOn : TbCell.MacroCyan,
-                onBody: null, onBar: BeginReposition);
+                onBody: null, onBar: BeginReposition, macro: true);
             p.Hit(TbCell.BodyX, 0, TbCell.BodyW + 1, TbCell.H, b => _mgr.MacroClicked(Macro, b));
             if (_mgr.IsMarked(Macro)) TbCell.Cross(p, TbCell.BodyX, TbCell.BodyY, TbCell.BodyW, TbCell.BodyH, TbCell.DeleteX);
             return new Size(TbCell.W, TbCell.H);
