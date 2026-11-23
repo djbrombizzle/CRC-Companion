@@ -25,13 +25,8 @@ namespace CrcCompanion.Ui
         private static Brush Make(byte r, byte g, byte b) { var x = new SolidColorBrush(Color.FromRgb(r, g, b)); x.Freeze(); return x; }
 
         /// <summary>One or two centered lines in a button body ("\n" splits).</summary>
-        public static void Label(Painter p, string label, double x, double y, double w, double h, Brush b)
-        {
-            var lines = label.Split('\n');
-            if (lines.Length == 1) { p.TextCentered(lines[0], x, w, y + Math.Floor((h - M.Cap) / 2), M, b); return; }
-            p.TextCentered(lines[0], x, w, y + 3, M, b);
-            p.TextCentered(lines[1], x, w, y + 16, M, b);
-        }
+        public static void Label(Painter p, string label, double x, double y, double w, double h, Brush b) =>
+            ToolbarFont.Label(p, label, x, y, w, b);
 
         /// <summary>A button with a tear-off bar (VIEWS style).</summary>
         public static void WithBar(Painter p, double x, double y, string label, Brush body, Action? onBody, Action? onBar, Brush? bar = null)
@@ -129,8 +124,8 @@ namespace CrcCompanion.Ui
                 {
                     p.Fill(Eram.TbBorder, X(0), y, TbCell.W, TbCell.H);
                     p.Fill(Eram.TbOff, X(0) + 1, y + 1, TbCell.W - 2, TbCell.H - 2);
-                    double tx = X(0) + 1 + Math.Floor((TbCell.W - 2 - TbCell.BodyW) / 2.0) + 4, ty = y + Math.Floor((TbCell.H - m.Cap) / 2.0);
-                    p.Text(_mgr.LabelText, tx, ty, m, Eram.TbText);
+                    double tx = X(0) + 1 + Math.Floor((TbCell.W - 2 - TbCell.BodyW) / 2.0) + 4, ty = y + 1 + ToolbarFont.Line1Top;
+                    ToolbarFont.Text(p, _mgr.LabelText, tx, ty, Eram.TbText);
                     Cursor(p, tx, ty, _mgr.LabelText.Length);
                 }
                 else if (pending != null && !_mgr.Tearing)
@@ -168,7 +163,7 @@ namespace CrcCompanion.Ui
                         bool sel = _mgr.EditOpen && mac == _mgr.Editing;
                         p.Fill(Eram.TbFrame, lx, ly, TbCell.W, LineH);
                         p.Fill(sel ? Eram.MenuText : TbCell.ListRow, lx + 1, ly, TbCell.W - 2, LineH - 1);
-                        p.Text(mac.Label, lx + Pad, ly + 2, m, sel ? Eram.Black : Eram.TbText);
+                        ToolbarFont.Text(p, mac.Label, lx + Pad, ly + 2, sel ? Eram.Black : Eram.TbText);
                         if (_mgr.IsMarked(mac)) TbCell.Cross(p, lx + 1, ly, TbCell.W - 2, LineH - 1, TbCell.DeleteX);
                         var mc = mac;
                         p.Hit(lx, ly, TbCell.W, LineH, b => _mgr.ListClicked(mc, b));
@@ -177,7 +172,7 @@ namespace CrcCompanion.Ui
                     if (_mgr.Settings.Macros.Count == 0)
                     {
                         p.Fill(TbCell.ListRow, lx, ly, TbCell.W, LineH);
-                        p.Text("NONE", lx + Pad, ly + 2, m, Eram.TbText);
+                        ToolbarFont.Text(p, "NONE", lx + Pad, ly + 2, Eram.TbText);
                         ly += LineH;
                     }
                     right = Math.Max(right, lx + TbCell.W);
@@ -206,7 +201,7 @@ namespace CrcCompanion.Ui
             {
                 double fy = bottom + 2, fw = fb.Length * m.Cell + Pad * 2;
                 p.Fill(Eram.Black, 0, fy, fw, LineH);
-                p.Text(fb, Pad, fy + 2, m, Eram.SystemYellow);
+                ToolbarFont.Text(p, fb, Pad, fy + 2, Eram.SystemYellow);
                 right = Math.Max(right, fw);
                 bottom = fy + LineH;
             }
@@ -220,7 +215,7 @@ namespace CrcCompanion.Ui
             p.Fill(Eram.ViewBorder, x, y, w, h);
             p.Fill(Eram.Black, x + 1, y + 1, w - 2, h - 2);
             for (int i = 0; i < lines.Count; i++)
-                p.Text(lines[i], x + 1 + Pad, y + 3 + i * LineH, m, Eram.TbText);
+                ToolbarFont.Text(p, lines[i], x + 1 + Pad, y + 3 + i * LineH, Eram.TbText);
             if (active && KeyboardActive)
             {
                 int line = single ? 0 : Math.Clamp(_mgr.CursorLine, 0, Math.Max(0, lines.Count - 1));
@@ -240,7 +235,7 @@ namespace CrcCompanion.Ui
         {
             p.Fill(Eram.ViewBorder, x, y, w, LineH + 2);
             p.Fill(TbCell.ListRow, x + 1, y, w - 2, LineH + 1);
-            p.TextCentered("SAVE MSG", x, w, y + 3, TbCell.M, Eram.TbText);
+            ToolbarFont.TextCentered(p, "SAVE MSG", x, w, y + 3, Eram.TbText);
             p.Hit(x, y, w, LineH + 2, _ => save());
         }
     }
