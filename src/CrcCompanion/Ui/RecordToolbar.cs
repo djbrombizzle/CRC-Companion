@@ -25,6 +25,9 @@ namespace CrcCompanion.Ui
         public static readonly Brush MacroCyan = Make(0x0E, 0x86, 0x8A);
         /// <summary>Macro button label: pure white, brighter than the toolbar's gray text.</summary>
         public static readonly Brush MacroText = Make(0xFF, 0xFF, 0xFF);
+        /// <summary>Macro labels: Verdana Bold, top-aligned like ERAM's macro buttons; long labels shrink to fit.</summary>
+        public static readonly Typeface MacroFace = new Typeface(new FontFamily("Verdana"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
+        public const double MacroSize = 13, MacroCapTop = 4;
 
         private static Brush Make(byte r, byte g, byte b) { var x = new SolidColorBrush(Color.FromRgb(r, g, b)); x.Freeze(); return x; }
 
@@ -39,7 +42,7 @@ namespace CrcCompanion.Ui
             p.Fill(Eram.TbBorder, x, y, W, H);
             p.Fill(bar ?? Eram.TbTearoff, x + BarX, y + BodyY, BarW, BodyH);
             p.Fill(body, x + BodyX, y + BodyY, BodyW, BodyH);
-            if (macro) ToolbarFont.BigLabel(p, label, x + BodyX, y + BodyY, BodyW, BodyH, MacroText);
+            if (macro) p.SmoothText(label.Replace('\n', ' ').Trim(), x + BodyX + 2, BodyW - 4, y + BodyY + MacroCapTop, MacroFace, MacroSize, MacroText);
             else if (ToolbarLabels.Has(label)) p.Runs(ToolbarLabels.Get(label), x + BodyX, y + BodyY, Eram.TbText);
             else Label(p, label, x + BodyX, y + BodyY, BodyW, BodyH, Eram.TbText);
             if (onBar != null) p.Hit(x, y, BodyX, H, _ => onBar());

@@ -28,6 +28,9 @@ namespace CrcCompanion.Ui
             SnapsToDevicePixels = true;
             UseLayoutRounding = true;
             RenderOptions.SetEdgeMode(this, EdgeMode.Aliased);
+            // Smooth text (macro labels): grayscale, since ClearType can't render on see-through windows.
+            TextOptions.SetTextRenderingMode(this, TextRenderingMode.Grayscale);
+            TextOptions.SetTextFormattingMode(this, TextFormattingMode.Display);
         }
 
         internal void AddHit(Rect r, Action<MouseButton> a) => _hits.Add((r, a));
@@ -183,6 +186,27 @@ namespace CrcCompanion.Ui
             }
             g.Freeze();
             _dc.DrawGeometry(b, null, g);
+        }
+
+        /// <summary>
+        /// Smooth (anti-aliased) text in a Windows font, centered across a width with the cap top at
+        /// <paramref name="capTop"/>. The size drops in half-point steps until the text fits the width.
+        /// </summary>
+        public void SmoothText(string s, double x, double w, double capTop, Typeface face, double size, Brush b)
+        {
+            if (_dc == null || string.IsNullOrEmpty(s)) return;
+            FormattedText ft;
+            while (true)
+            {
+                ft = new FormattedText(s, System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+                    face, size, b, 1.0);
+                if (ft.WidthIncludingTrailingWhitespace <= w || size <= 8) break;
+                size -= 0.5;
+            }
+            double capH = face.CapsHeight * size;
+            double tx = Math.Round(x + (w - ft.Width) / 2);
+            double ty = Math.Round(capTop - (ft.Baseline - capH));
+            _dc.DrawText(ft, new Point(tx, ty));
         }
 
         /// <summary>Ellipse outline filling a box.</summary>
