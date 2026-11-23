@@ -12,8 +12,27 @@ namespace CrcCompanion.Ui
     /// Label pixels are drawn from the capture (ToolbarLabels), so they match exactly.
     /// A button is live when the app has a view for it (see AppController); others do nothing.
     /// </summary>
-    public sealed class ViewsSelectorWindow : EramWindow
+    public sealed class ViewsSelectorWindow : EramWindow, ITearOffSource
     {
+        public string Menu => "VIEWS";
+        public Action<string>? TearOff { get; set; }
+
+        public bool HasTearOff(string id) => id == InSectorKey || System.Linq.Enumerable.Contains(Labels(), id);
+
+        private static System.Collections.Generic.IEnumerable<string> Labels()
+        {
+            foreach (var l in Grid) if (l != null) yield return l;
+        }
+
+        /// <summary>A torn-off view button: toggles its view like the one in the grid.</summary>
+        public Size PaintTearOff(string id, Painter p, TearOffWindow w)
+        {
+            bool wired = id == InSectorKey || _wired(id);
+            bool on = wired && _isOn(id);
+            DrawCell(p, 0, 0, id, on ? Eram.TbOn : Eram.TbOff, onBody: wired ? () => _toggle(id) : (Action?)null, onBar: null);
+            return new Size(CellW, CellH);
+        }
+
         public const string AltimKey = "ALTIM SET";
         public const string WxKey = "WX REPORT";
         public const string InboundKey = "INBND LIST";
@@ -87,7 +106,7 @@ namespace CrcCompanion.Ui
                     bool on = wired && _isOn(label);
                     DrawCell(p, cx, cy, label, on ? Eram.TbOn : Eram.TbOff,
                         onBody: wired ? () => _toggle(label) : (Action?)null,
-                        onBar: null);
+                        onBar: () => TearOff?.Invoke(label));
                 }
             }
 
@@ -96,7 +115,7 @@ namespace CrcCompanion.Ui
             p.Fill(Eram.TbFrame, gx, ey, CellW + FrameT * 2, CellH + FrameT * 2);
             bool inSectorOn = _isOn(InSectorKey);
             DrawCell(p, gx + FrameT, ey + FrameT, InSectorKey, inSectorOn ? Eram.TbOn : Eram.TbOff,
-                onBody: () => _toggle(InSectorKey), onBar: null);
+                onBody: () => _toggle(InSectorKey), onBar: () => TearOff?.Invoke(InSectorKey));
 
             return new Size(CellW + gridW, ey + CellH + FrameT * 2);
         }

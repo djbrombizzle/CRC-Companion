@@ -78,6 +78,9 @@ namespace CrcCompanion.Ui
 
         public void SetScale(double s) => _bar.SetScale(s);
 
+        /// <summary>The DRAW toolbar, as a source of tear-off buttons.</summary>
+        public ITearOffSource TearOffSource => _bar;
+
         public void Close()
         {
             _track.Stop();
@@ -495,9 +498,9 @@ namespace CrcCompanion.Ui
     }
 
     /// <summary>The DRAW toolbar (ERAM manual figure 5-2).</summary>
-    public sealed class DrawToolbarWindow : EramWindow
+    public sealed class DrawToolbarWindow : EramWindow, ITearOffSource
     {
-        private const int CellW = 66, CellH = 32, Gap = 2, Frame = 2, LineH = 14, Pad = 4;
+        private const int CellH = 32, Gap = 2, Frame = 2, LineH = 14, Pad = 4;
         private static readonly Brush Teal = Make(0x3C, 0x8C, 0x8C);
         private static readonly Brush TealOn = Make(0x5C, 0xB8, 0xB8);
         private static readonly Brush ValueGreen = Make(0x3C, 0x96, 0x28);
@@ -518,12 +521,99 @@ namespace CrcCompanion.Ui
 
         public void Refresh() => Surface.Refresh();
 
-        private static void Cell(Painter p, double x, double y, Brush body, string label, Action<MouseButton>? click)
+        public string Menu => "DRAW";
+        public Action<string>? TearOff { get; set; }
+
+        /// <summary>DRAW's buttons and where they sit: (id, column, row).</summary>
+        private static readonly (string Id, int Col, int Row)[] Layout =
         {
-            p.Fill(Eram.TbBorder, x, y, CellW, CellH);
-            p.Fill(body, x + 1, y + 1, CellW - 2, CellH - 2);
-            if (label.Length > 0) ToolbarFont.Label(p, label, x + 1, y + 1, CellW - 2, Eram.TbText);
-            if (click != null) p.Hit(x, y, CellW, CellH, click);
+            ("RECTANGLE", 0, 0), ("CIRCLE", 1, 0), ("O SIZE", 2, 0), ("LINE", 3, 0), ("TEXT", 4, 0), ("COLOR", 5, 0), ("COLORS", 6, 0),
+            ("FONT", 0, 1), ("A FONT", 1, 1), ("DISP", 2, 1), ("DEL", 3, 1), ("DEL ALL", 4, 1),
+        };
+
+        public bool HasTearOff(string id) => Layout.Any(l => l.Id == id);
+
+        public Size PaintTearOff(string id, Painter p, TearOffWindow w)
+        {
+            Button(id, p, 0, 0, null);
+            return new Size(TbCell.W, TbCell.H);
+        }
+
+        /// <summary>A DRAW cell: tear-off bar and body, with left/middle clicks on the body.</summary>
+        private static void Cell(Painter p, double x, double y, Brush body, string label, Action<MouseButton>? click, Action? onBar)
+        {
+            p.Fill(Eram.TbBorder, x, y, TbCell.W, CellH);
+            p.Fill(Eram.TbTearoff, x + TbCell.BarX, y + TbCell.BodyY, TbCell.BarW, TbCell.BodyH);
+            p.Fill(body, x + TbCell.BodyX, y + TbCell.BodyY, TbCell.BodyW, TbCell.BodyH);
+            if (label.Length > 0) ToolbarFont.Label(p, label, x + TbCell.BodyX, y + TbCell.BodyY, TbCell.BodyW, Eram.TbText);
+            if (click != null) p.Hit(x + TbCell.BodyX, y, TbCell.BodyW + 1, CellH, click);
+            if (onBar != null) p.Hit(x, y, TbCell.BodyX, CellH, _ => onBar());
+        }
+
+        /// <summary>One DRAW button at x, y (in the toolbar, or torn off).</summary>
+        private void Button(string id, Painter p, double x, double y, Action? onBar)
+        {
+            var s = _mgr.Settings;
+            var tool = _mgr.ActiveTool;
+            var ink = _mgr.BrushAt(s.Color, 100);
+            double bx = x + TbCell.BodyX, by = y + TbCell.BodyY, bw = TbCell.BodyW, bh = TbCell.BodyH;
+            switch (id)
+            {
+                case "RECTANGLE":
+                    Cell(p, x, y, tool == DrawManager.Tool.Rectangle ? TealOn : Teal, "", _ => _mgr.ToolClicked(DrawManager.Tool.Rectangle), onBar);
+                    p.Frame(ink, bx + 20, by + 7, bw - 40, bh - 14, 2);
+                    break;
+                case "CIRCLE":
+                    Cell(p, x, y, tool == DrawManager.Tool.Circle ? TealOn : Teal, "", _ => _mgr.ToolClicked(DrawManager.Tool.Circle), onBar);
+                    p.Ellipse(ink, bx + (bw - 24) / 2, by + 3, 24, 24, 2);
+                    break;
+                case "O SIZE":
+                    Cell(p, x, y, ValueGreen, "O SIZE\n5", _ => _mgr.CircleSizeClicked(), onBar);
+                    TbCell.Cross(p, bx, by, bw, bh, DisabledX);   // display anchor: deactivated
+                    break;
+                case "LINE":
+                    Cell(p, x, y, tool == DrawManager.Tool.Line ? TealOn : Teal, "", _ => _mgr.ToolClicked(DrawManager.Tool.Line), onBar);
+                    p.Polyline(ink, new[] { new Point(bx + 16, by + 8), new Point(bx + bw - 16, by + bh - 8) }, 2);
+                    break;
+                case "TEXT":
+                    Cell(p, x, y, tool == DrawManager.Tool.Text ? TealOn : Teal, "", _ => _mgr.ToolClicked(DrawManager.Tool.Text), onBar);
+                    ToolbarFont.Text(p, "A", bx + (bw - ToolbarFont.GlyphW) / 2.0, by + ToolbarFont.Line1Top, ink);
+                    break;
+                case "COLOR":
+                    Cell(p, x, y, Eram.Black, "COLOR\n" + s.Brightness, b => _mgr.ColorClicked(b), onBar);
+                    break;
+                case "COLORS":
+                {
+                    // Color selection: four swatches, the selected one framed.
+                    Cell(p, x, y, Eram.TbBorder, "", null, onBar);
+                    double sw = bw / 2.0, sh = bh / 2.0;
+                    int[] order = { 0, 2, 1, 3 };   // green, coral / white, yellow, as in the ERAM toolbar
+                    for (int i = 0; i < 4; i++)
+                    {
+                        int color = order[i];
+                        double cx = bx + (i % 2) * sw, cy = by + (i / 2) * sh;
+                        p.Fill(_mgr.BrushAt(color, 100), cx + 2, cy + 2, sw - 4, sh - 4);
+                        if (color == s.Color) p.Frame(White, cx, cy, sw, sh, 2);
+                        p.Hit(cx, cy, sw, sh, _ => _mgr.SwatchClicked(color));
+                    }
+                    break;
+                }
+                case "FONT":
+                    Cell(p, x, y, Teal, "FONT", _ => _mgr.FontDefaultClicked(), onBar);
+                    break;
+                case "A FONT":
+                    Cell(p, x, y, ValueGreen, "A FONT\n" + s.Font, b => _mgr.FontClicked(b), onBar);
+                    break;
+                case "DISP":
+                    Cell(p, x, y, Hatched, "DISP", _ => _mgr.AnchorClicked(), onBar);
+                    break;
+                case "DEL":
+                    Cell(p, x, y, tool == DrawManager.Tool.Delete ? TealOn : Teal, "DEL", _ => _mgr.ToolClicked(DrawManager.Tool.Delete), onBar);
+                    break;
+                case "DEL ALL":
+                    Cell(p, x, y, _mgr.DelAllArmed ? TbCell.BurntOrange : Teal, "DEL\nALL", _ => _mgr.DelAllClicked(), onBar);
+                    break;
+            }
         }
 
         private Size Paint(Painter p)
@@ -536,52 +626,14 @@ namespace CrcCompanion.Ui
             if (s.Open)
             {
                 double gx = TbCell.W;
-                double gridW = Frame * 2 + 7 * CellW + 6 * Gap, gridH = Frame * 2 + 2 * CellH + Gap;
+                double gridW = Frame * 2 + 7 * TbCell.W + 6 * Gap, gridH = Frame * 2 + 2 * CellH + Gap;
                 p.Fill(Eram.TbFrame, gx, 0, gridW, gridH);
                 p.Fill(Eram.TbGap, gx + Frame, Frame, gridW - Frame * 2, gridH - Frame * 2);
-                double X(int i) => gx + Frame + i * (CellW + Gap);
-                double y0 = Frame, y1 = Frame + CellH + Gap;
-                var tool = _mgr.ActiveTool;
-                var ink = _mgr.BrushAt(s.Color, 100);
-
-                // Row 1: shapes, O SIZE, line, text, COLOR and the color selection.
-                Cell(p, X(0), y0, tool == DrawManager.Tool.Rectangle ? TealOn : Teal, "", _ => _mgr.ToolClicked(DrawManager.Tool.Rectangle));
-                p.Frame(ink, X(0) + 13, y0 + 7, CellW - 26, CellH - 14, 2);
-
-                Cell(p, X(1), y0, tool == DrawManager.Tool.Circle ? TealOn : Teal, "", _ => _mgr.ToolClicked(DrawManager.Tool.Circle));
-                p.Ellipse(ink, X(1) + 21, y0 + 4, CellW - 42, CellH - 8, 2);
-
-                Cell(p, X(2), y0, ValueGreen, "O SIZE\n5", _ => _mgr.CircleSizeClicked());
-                TbCell.Cross(p, X(2) + 1, y0 + 1, CellW - 2, CellH - 2, DisabledX);   // display anchor: deactivated
-
-                Cell(p, X(3), y0, tool == DrawManager.Tool.Line ? TealOn : Teal, "", _ => _mgr.ToolClicked(DrawManager.Tool.Line));
-                p.Polyline(ink, new[] { new Point(X(3) + 10, y0 + 10), new Point(X(3) + CellW - 10, y0 + CellH - 10) }, 2);
-
-                Cell(p, X(4), y0, tool == DrawManager.Tool.Text ? TealOn : Teal, "", _ => _mgr.ToolClicked(DrawManager.Tool.Text));
-                ToolbarFont.Text(p, "A", X(4) + (CellW - ToolbarFont.GlyphW) / 2.0, y0 + 1 + ToolbarFont.Line1Top, ink);
-
-                Cell(p, X(5), y0, Eram.Black, "COLOR\n" + s.Brightness, b => _mgr.ColorClicked(b));
-
-                // Color selection: four swatches, the selected one framed.
-                double sx = X(6), sw = (CellW - 2) / 2.0, sh = (CellH - 2) / 2.0;
-                p.Fill(Eram.TbBorder, sx, y0, CellW, CellH);
-                int[] order = { 0, 2, 1, 3 };   // green, coral / white, yellow, as in the ERAM toolbar
-                for (int i = 0; i < 4; i++)
+                foreach (var (id, col, row) in Layout)
                 {
-                    int color = order[i];
-                    double cx = sx + 1 + (i % 2) * sw, cy = y0 + 1 + (i / 2) * sh;
-                    p.Fill(_mgr.BrushAt(color, 100), cx + 2, cy + 2, sw - 4, sh - 4);
-                    if (color == s.Color) p.Frame(White, cx, cy, sw, sh, 2);
-                    p.Hit(cx, cy, sw, sh, _ => _mgr.SwatchClicked(color));
+                    string bid = id;
+                    Button(id, p, gx + Frame + col * (TbCell.W + Gap), Frame + row * (CellH + Gap), () => TearOff?.Invoke(bid));
                 }
-
-                // Row 2: FONT, A FONT, DISP, DEL, DEL ALL.
-                Cell(p, X(0), y1, Teal, "FONT", _ => _mgr.FontDefaultClicked());
-                Cell(p, X(1), y1, ValueGreen, "A FONT\n" + s.Font, b => _mgr.FontClicked(b));
-                Cell(p, X(2), y1, Hatched, "DISP", _ => _mgr.AnchorClicked());
-                Cell(p, X(3), y1, tool == DrawManager.Tool.Delete ? TealOn : Teal, "DEL", _ => _mgr.ToolClicked(DrawManager.Tool.Delete));
-                Cell(p, X(4), y1, _mgr.DelAllArmed ? TbCell.BurntOrange : Teal, "DEL\nALL", _ => _mgr.DelAllClicked());
-
                 right = gx + gridW;
                 bottom = Math.Max(bottom, gridH);
             }

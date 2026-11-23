@@ -10,8 +10,41 @@ namespace CrcCompanion.Ui
     /// ERAM COMMAND MENUS toolbar button (ERAM manual 13.9). It opens RNG BRG, whose menu lists LA to LE.
     /// Picking a command CRC runs types its code into CRC's MCA, with no Enter, so the controller finishes it in CRC.
     /// </summary>
-    public sealed class CommandMenusWindow : EramWindow
+    public sealed class CommandMenusWindow : EramWindow, ITearOffSource
     {
+        public const string RngBrgId = "RNG BRG";
+
+        public string Menu => "COMMAND MENUS";
+        public Action<string>? TearOff { get; set; }
+        public bool HasTearOff(string id) => id == RngBrgId;
+
+        /// <summary>A torn-off RNG BRG: its own LA-LE list opens under it.</summary>
+        public System.Windows.Size PaintTearOff(string id, Painter p, TearOffWindow w)
+        {
+            TbCell.WithBar(p, 0, 0, RngBrgId, w.Expanded ? Eram.TbOn : Eram.TbOff,
+                onBody: () => { w.Expanded = !w.Expanded; w.Refresh(); }, onBar: null);
+            if (!w.Expanded) return new System.Windows.Size(TbCell.W, TbCell.H);
+            var (r, b) = PaintRngBrgList(p, 0, TbCell.H);
+            return new System.Windows.Size(Math.Max(TbCell.W, r), b);
+        }
+
+        /// <summary>The RNG BRG list (LA to LE) with its top-left at x, y. Returns its right and bottom edges.</summary>
+        private (double Right, double Bottom) PaintRngBrgList(Painter p, double x, double y)
+        {
+            var m = TbCell.M;
+            double lw = ListChars * m.Cell + Pad * 2, ly = y;
+            foreach (var c in CommandMenus.RngBrg)
+            {
+                p.Fill(Eram.TbFrame, x, ly, lw, LineH);
+                p.Fill(TbCell.ListRow, x + 1, ly, lw - 2, LineH - 1);
+                ToolbarFont.Text(p, c.Label, x + Pad, ly + 2, c.InCrc ? Eram.TbText : Dim);
+                var cmd = c;
+                p.Hit(x, ly, lw, LineH, _ => Pick(cmd));
+                ly += LineH;
+            }
+            return (x + lw, ly + 1);
+        }
+
         private const int LineH = 14, Pad = 4, ListChars = 22;
         private static readonly Brush Dim = MakeBrush(0x80, 0x80, 0x80);
 
@@ -97,24 +130,16 @@ namespace CrcCompanion.Ui
                 p.Fill(Eram.TbFrame, gx, 0, gridW, bottom);
                 p.Fill(Eram.TbGap, gx + TbCell.FrameT, TbCell.FrameT, gridW - TbCell.FrameT * 2, TbCell.H);
                 double cx = gx + TbCell.FrameT, y = TbCell.FrameT;
-                TbCell.Plain(p, cx, y, "RNG BRG", _rngBrgOpen ? Eram.TbOn : Eram.TbOff, _ => ToggleRngBrg());
+                TbCell.WithBar(p, cx, y, RngBrgId, _rngBrgOpen ? Eram.TbOn : Eram.TbOff,
+                    onBody: ToggleRngBrg, onBar: () => TearOff?.Invoke(RngBrgId));
                 right = gx + gridW;
 
                 // RNG BRG menu: under its button, one row per command; ones CRC lacks are dimmed.
                 if (_rngBrgOpen)
                 {
-                    double lx = cx, ly = bottom, lw = ListChars * m.Cell + Pad * 2;
-                    foreach (var c in CommandMenus.RngBrg)
-                    {
-                        p.Fill(Eram.TbFrame, lx, ly, lw, LineH);
-                        p.Fill(TbCell.ListRow, lx + 1, ly, lw - 2, LineH - 1);
-                        ToolbarFont.Text(p, c.Label, lx + Pad, ly + 2, c.InCrc ? Eram.TbText : Dim);
-                        var cmd = c;
-                        p.Hit(lx, ly, lw, LineH, _ => Pick(cmd));
-                        ly += LineH;
-                    }
-                    right = Math.Max(right, lx + lw);
-                    bottom = ly + 1;
+                    var (r, b) = PaintRngBrgList(p, cx, bottom);
+                    right = Math.Max(right, r);
+                    bottom = b;
                 }
             }
 

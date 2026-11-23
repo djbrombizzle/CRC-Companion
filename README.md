@@ -40,6 +40,10 @@ Each opens from its VIEWS button and has the usual M menu (O/T, BORDER, LINES, F
 
 Fixes and FRDs are read from CRC's own `%LOCALAPPDATA%\CRC\NavData.dat`. Without it, only airports resolve. Bearings are true, not magnetic.
 
+## Tear-offs
+
+Every button inside the VIEWS, RECORD, COMMAND MENUS and DRAW menus has a gold tear-off bar. Click it to pull a copy of the button off the menu, then click to place it anywhere. The copy works like the original. Left-click a tear-off's bar to move it, and middle-click it to delete it. Tear-offs are saved in the profile. See [the manual](docs/MANUAL.md#tear-offs).
+
 ## RECORD (macros)
 
 ERAM's RECORD toolbar, under the VIEWS selector. See [the manual](docs/MANUAL.md#6-record-macros) for details.

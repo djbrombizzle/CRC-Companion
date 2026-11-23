@@ -75,8 +75,46 @@ namespace CrcCompanion.Ui
     /// ERAM RECORD toolbar (ERAM manual 7.2): RECORD opens MSG #, MACRO EDIT, MACRO DELETE and CLR ALL MACROS.
     /// All state lives in <see cref="MacroManager"/>; this only draws it and routes clicks and keys.
     /// </summary>
-    public sealed class RecordToolbarWindow : EramWindow
+    public sealed class RecordToolbarWindow : EramWindow, ITearOffSource
     {
+        public const string MsgId = "MSG", EditId = "MACRO EDIT", DeleteId = "MACRO DELETE", ClearId = "CLR ALL MACROS";
+
+        public string Menu => "RECORD";
+        public Action<string>? TearOff { get; set; }
+        public bool HasTearOff(string id) => id is MsgId or EditId or DeleteId or ClearId;
+
+        /// <summary>
+        /// A torn-off RECORD button. It works like the one on the toolbar; what it opens (the recording box, the
+        /// macro list) appears on the RECORD toolbar, which opens if it's closed.
+        /// </summary>
+        public Size PaintTearOff(string id, Painter p, TearOffWindow w)
+        {
+            MenuButton(id, p, 0, 0, null, openMenu: true);
+            return new Size(TbCell.W, TbCell.H);
+        }
+
+        /// <summary>One of RECORD's buttons, with its tear-off bar.</summary>
+        private void MenuButton(string id, Painter p, double x, double y, Action? onBar, bool openMenu = false)
+        {
+            Action Run(Action a) => () => { if (openMenu) _mgr.OpenMenu(); a(); };
+            switch (id)
+            {
+                case MsgId:
+                    TbCell.WithBar(p, x, y, Macros.MsgButton(_mgr.Settings.Macros.Count),
+                        _mgr.Mode == MacroManager.Entry.Lines ? Eram.TbOn : Eram.TbOff, Run(_mgr.MsgClicked), onBar);
+                    break;
+                case EditId:
+                    TbCell.WithBar(p, x, y, "MACRO\nEDIT", _mgr.EditOpen ? Eram.TbOn : Eram.TbOff, Run(_mgr.ToggleEdit), onBar);
+                    break;
+                case DeleteId:
+                    TbCell.WithBar(p, x, y, "MACRO\nDELETE", _mgr.DeleteOpen ? Eram.TbOn : Eram.TbOff, Run(_mgr.ToggleDelete), onBar);
+                    break;
+                case ClearId:
+                    TbCell.WithBar(p, x, y, "CLR ALL\nMACROS", _mgr.ClearArmed ? TbCell.BurntOrange : TbCell.ClrBlue, Run(_mgr.ClearAllClicked), onBar);
+                    break;
+            }
+        }
+
         private readonly MacroManager _mgr;
         private readonly DispatcherTimer _blinkTimer;
         private bool _blinkOn = true;
@@ -145,13 +183,12 @@ namespace CrcCompanion.Ui
                 }
                 else if (pending == null)
                 {
-                    TbCell.Plain(p, X(0), y, Macros.MsgButton(_mgr.Settings.Macros.Count),
-                        _mgr.Mode == MacroManager.Entry.Lines ? Eram.TbOn : Eram.TbOff, _ => _mgr.MsgClicked());
+                    MenuButton(MsgId, p, X(0), y, () => TearOff?.Invoke(MsgId));
                 }
 
-                TbCell.Plain(p, X(1), y, "MACRO\nEDIT", _mgr.EditOpen ? Eram.TbOn : Eram.TbOff, _ => _mgr.ToggleEdit());
-                TbCell.Plain(p, X(2), y, "MACRO\nDELETE", _mgr.DeleteOpen ? Eram.TbOn : Eram.TbOff, _ => _mgr.ToggleDelete());
-                TbCell.Plain(p, X(3), y, "CLR ALL\nMACROS", _mgr.ClearArmed ? TbCell.BurntOrange : TbCell.ClrBlue, _ => _mgr.ClearAllClicked());
+                MenuButton(EditId, p, X(1), y, () => TearOff?.Invoke(EditId));
+                MenuButton(DeleteId, p, X(2), y, () => TearOff?.Invoke(DeleteId));
+                MenuButton(ClearId, p, X(3), y, () => TearOff?.Invoke(ClearId));
 
                 // Recording: input box under MSG with SAVE MSG below it.
                 if (_mgr.Mode == MacroManager.Entry.Lines)
@@ -420,10 +457,20 @@ namespace CrcCompanion.Ui
             _dirty();
         }
 
+        /// <summary>Opens the RECORD toolbar if it's closed (for torn-off RECORD buttons).</summary>
+        public void OpenMenu()
+        {
+            if (!Settings.Open) ToggleOpen();
+        }
+
+        /// <summary>The RECORD toolbar, as a source of tear-off buttons.</summary>
+        public ITearOffSource TearOffSource => _bar;
+
         public void MsgClicked()
         {
             if (Mode == Entry.Lines) return;
             CloseMenus();
+            if (Pending != null) { Say("MOVE THE NEW MACRO FIRST"); return; }
             if (Settings.Macros.Count >= Macros.Max) { Say("MSG MAX"); return; }
             Mode = Entry.Lines;
             EntryLines = new List<string> { "" };

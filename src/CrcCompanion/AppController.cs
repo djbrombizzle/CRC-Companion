@@ -46,6 +46,7 @@ namespace CrcCompanion
         private MacroManager? _macros;
         private CommandMenusWindow? _commands;
         private DrawManager? _draw;
+        private TearOffManager? _tearOffs;
         private AltimViewWindow? _altim;
         private WxViewWindow? _wx;
         private StripViewWindow? _inbound;
@@ -299,6 +300,14 @@ namespace CrcCompanion
             var (dx, dy) = Place(_profile.Draw.X, _profile.Draw.Y, wa.Left + 40, wa.Top + 40 + (int)(250 * UiScale));
             _draw.ShowToolbar(dx, dy);
 
+            // Torn-off menu buttons, after their menus exist.
+            _tearOffs = new TearOffManager(_profile.TearOffs, () => UiScale, MarkDirty);
+            _tearOffs.Register(_selector);
+            _tearOffs.Register(_macros.TearOffSource);
+            _tearOffs.Register(_commands);
+            _tearOffs.Register(_draw.TearOffSource);
+            _tearOffs.ShowSaved(Place);
+
             _altim = new AltimViewWindow(this, _profile.Altim);
             _wx = new WxViewWindow(this, _profile.Wx);
             _inbound = new StripViewWindow(this, _profile.Inbound, StripKind.Inbound, this);
@@ -375,6 +384,8 @@ namespace CrcCompanion
             _commands = null;
             _draw?.Close();
             _draw = null;
+            _tearOffs?.Close();
+            _tearOffs = null;
             _grid.Clear();
             _altim = null; _wx = null; _inbound = null; _inSector = null; _dept = null; _status = null; _selector = null;
         }
@@ -473,6 +484,7 @@ namespace CrcCompanion
             _macros?.SetScale(scale);
             _commands?.SetScale(scale);
             _draw?.SetScale(scale);
+            _tearOffs?.SetScale(scale);
             foreach (var v in Views) v.SetScale(scale);
             MarkDirty();
         }

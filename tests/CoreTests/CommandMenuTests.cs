@@ -15,5 +15,17 @@ internal static class CommandMenuTests
         eq("LE isn't typed (not in CRC)", null, CommandMenus.TypedText(CommandMenus.RngBrg[4]));
         check("rows fit the menu (22 chars)", CommandMenus.RngBrg.All(c => c.Label.Length <= 22), "a label is too long");
         check("every command has a prompt", CommandMenus.RngBrg.All(c => c.Prompt.Length > 0), "missing prompt");
+
+        // Saved tear-offs: blanks and exact duplicates dropped, copies at different spots kept
+        var tears = new System.Collections.Generic.List<TearOffSettings>
+        {
+            new TearOffSettings { Menu = "VIEWS", Id = "WX REPORT", X = 10, Y = 10 },
+            new TearOffSettings { Menu = "VIEWS", Id = "WX REPORT", X = 10, Y = 10 },
+            new TearOffSettings { Menu = "VIEWS", Id = "WX REPORT", X = 50, Y = 10 },
+            new TearOffSettings { Menu = "", Id = "CFR" },
+            null!,
+        };
+        TearOffs.Sanitize(tears);
+        eq("tear-offs sanitized", 2, tears.Count);
     }
 }

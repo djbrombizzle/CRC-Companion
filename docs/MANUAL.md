@@ -71,6 +71,23 @@ The views copy CRC's ERAM look and mouse conventions.
 | Move the VIEWS, RECORD, COMMAND MENUS or DRAW button, or a macro button | Click the olive bar at its left, move, click again. |
 | Hide a view | Click the **-** at the right of its title bar, or click its button in the VIEWS selector. |
 | Put every view back on screen | Tray menu → **Reset view positions**. |
+| Tear a button off a menu | Click the gold bar on a button inside VIEWS, RECORD, COMMAND MENUS or DRAW, move, click again. See below. |
+| Delete a torn-off button | Middle-click its gold bar. |
+
+### Tear-offs
+
+As in ERAM, you can tear a button off its menu and keep it anywhere on screen:
+
+1. Open the menu (**VIEWS**, **RECORD**, **COMMAND MENUS** or **DRAW**).
+2. Click the gold bar at the left of the button you want. A copy follows the mouse.
+3. Click to place it. Esc or a right-click cancels.
+
+The copy works exactly like the button in the menu, and the menu keeps its own. You can tear off the same button more than once.
+
+- **Moving a tear-off:** left-click its gold bar, move, click again.
+- **Deleting a tear-off:** middle-click its gold bar. (CRC's own DELETE TEAROFF doesn't reach the companion's buttons.)
+- **What a tear-off opens:** a torn-off **RNG BRG** opens its LA to LE list under itself. Torn-off RECORD buttons (MSG, MACRO EDIT, MACRO DELETE) open their recording box or macro list on the RECORD toolbar, which opens if it's closed.
+- **Saving:** tear-offs and their positions are saved in the profile. **Reset view positions** leaves them where they are.
 
 ### The M menu
 
@@ -117,7 +134,7 @@ Right-click the companion's tray icon (near the clock):
 | **New profile...** / **Duplicate current...** / **Rename current...** / **Delete current** | Manage profiles. |
 | **Size** | An extra scale on top of Windows display scaling (75% to 250%), so the views can match CRC's size exactly. Saved with the profile. |
 | **Weather source** | **Real world (aviationweather.gov)**, the default, or **VATSIM (metar.vatsim.net)**. |
-| **Reset view positions** | Moves every view, and the VIEWS, RECORD, COMMAND MENUS and DRAW buttons, back to a default spot on screen. Macro buttons and DRAW annotations stay where they are. |
+| **Reset view positions** | Moves every view, and the VIEWS, RECORD, COMMAND MENUS and DRAW buttons, back to a default spot on screen. Macro buttons, torn-off buttons and DRAW annotations stay where they are. |
 | **Open profiles folder** | Opens the folder holding your profiles, for backup or sharing. |
 | **Exit** | Closes the companion. |
 
@@ -133,7 +150,8 @@ A profile saves everything:
 - station lists, sublists and entries;
 - the positions of the VIEWS, RECORD, COMMAND MENUS and DRAW buttons;
 - your macros and where their buttons are;
-- your DRAW annotations and DRAW settings (color, brightness, A FONT).
+- your DRAW annotations and DRAW settings (color, brightness, A FONT);
+- torn-off menu buttons and where they are.
 
 Changes save automatically a moment after you make them.
 
