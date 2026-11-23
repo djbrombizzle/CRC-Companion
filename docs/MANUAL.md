@@ -130,6 +130,7 @@ Right-click the companion's tray icon (near the clock):
 | *Profile: NAME* | The profile in use. |
 | **Set VATSIM CID...** | Your VATSIM CID, used to find your controller position in the VATSIM data. |
 | **Switch profile when I log on** | When you log on as a controller, switch to the profile named after your facility (for example `ZDC`). |
+| **Macros: use FLID typed in CRC** | Off by default. A flight ID typed into CRC's MCA before you click a macro runs the macro on it ([section 6](#6-record-macros)). |
 | *(profile list)* | Click a profile to switch to it. |
 | **New profile...** / **Duplicate current...** / **Rename current...** / **Delete current** | Manage profiles. |
 | **Size** | An extra scale on top of Windows display scaling (75% to 250%), so the views can match CRC's size exactly. Saved with the profile. |
@@ -231,6 +232,13 @@ Click a macro button with the left or middle button. What happens next depends o
 3. Each command is typed into CRC with the flight ID and Enter, one after another.
 
 Click the lit button again to cancel. These macros take one flight only; ERAM gives the same `TOO MANY FLIGHT IDS` error.
+
+**Workaround: type the flight ID first.** This isn't how ERAM works, so it's off by default. Turn on tray menu → **Macros: use FLID typed in CRC**. Then:
+1. In CRC, type the flight ID into the empty MCA: a CRC CID like `151`, or a callsign like `AAL123`. Don't press Enter.
+2. Click the macro button.
+3. The companion clears the MCA and types every command of the macro with that flight ID and Enter, for example `QQ P140 151` then `E1S 151`.
+
+It works for one-command macros too. The typed flight ID is only used when it's the only thing on the MCA line, typed in the last minute. If you clicked in CRC since typing it, or the line holds anything else, the macro works the normal way instead. To know what's on the MCA line, the companion watches the keys you type while CRC's ERAM window is in front, only while this option is on. It ignores keys typed into other programs and keeps nothing but the current line, in memory.
 
 **How the commands get into CRC.** CRC has no command interface, so the companion types the commands the same way the vUSALink app's CRC echo does:
 - It brings CRC's ERAM window to the front and sends the keystrokes.
@@ -826,6 +834,7 @@ Notes sent with the EDST's **GI** button appear in the companion's UA view ([sec
 **What the companion sends, and what it doesn't:**
 - **It never sends anything back.** It doesn't send CPDLC messages, change TMU state, change FCAs, or write to the vUSALink app's files.
 - **Macros and COMMAND MENUS type into CRC only.** They type into CRC's MCA on your PC. Nothing goes over the network.
+- **Keys typed into CRC are watched only if you turn on "Macros: use FLID typed in CRC".** Then the companion follows the keys you type while CRC's ERAM window is in front, to know the current MCA line. It ignores other programs, and it doesn't save or send anything.
 - **DRAW stays on your screen.** Annotations are drawn by the companion over CRC; CRC and other controllers don't see them.
 - **Your CID stays on your PC.** It's only used to find you in the public VATSIM data.
 - **Service requests carry only your airspace,** for example `KZDC`.

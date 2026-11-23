@@ -13,9 +13,11 @@ namespace CrcCompanion.Tray
         void SetWeatherSource(string source);
         string Cid { get; }
         bool AutoSwitchProfile { get; }
+        bool MacroTypedFlid { get; }
         string SessionStatus { get; }
         void SetCid();
         void ToggleAutoSwitch();
+        void ToggleMacroTypedFlid();
         void SwitchProfile(string name);
         void NewProfile();
         void DuplicateProfile();
@@ -67,6 +69,9 @@ namespace CrcCompanion.Tray
             var auto = new WinForms.ToolStripMenuItem("Switch profile when I log on") { Checked = _host.AutoSwitchProfile };
             auto.Click += (_, _) => _host.ToggleAutoSwitch();
             _menu.Items.Add(auto);
+            var typed = new WinForms.ToolStripMenuItem("Macros: use FLID typed in CRC") { Checked = _host.MacroTypedFlid };
+            typed.Click += (_, _) => _host.ToggleMacroTypedFlid();
+            _menu.Items.Add(typed);
             _menu.Items.Add(new WinForms.ToolStripSeparator());
 
             foreach (var name in _host.Profiles())

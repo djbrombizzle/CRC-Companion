@@ -739,6 +739,17 @@ namespace CrcCompanion.Ui
             if (Mode != Entry.None) CancelEntry();
             if (_armed == m) { Disarm(); Say("MACRO CANCELLED", 3); return; }
             Disarm();
+
+            // Workaround (tray option): a flight ID typed into CRC's MCA first runs the whole macro on it now.
+            var typed = TypedFlid?.Invoke();
+            if (typed != null)
+            {
+                var cmds = Macros.Commands(m, new[] { typed }, out var error);
+                if (error != null) { Say(error); return; }
+                _ = TypeAsync(cmds, enterLast: true, m.Label + " " + typed + " SENT", sent: TypedFlidUsed);
+                return;
+            }
+
             if (m.Lines.Count == 1)
             {
                 // One command: into CRC's MCA, waiting for the flight. Click its track in CRC.
@@ -787,13 +798,22 @@ namespace CrcCompanion.Ui
             _ = TypeAsync(cmds, enterLast: true, m.Label + " " + callsign.ToUpperInvariant() + " SENT");
         }
 
-        private async System.Threading.Tasks.Task TypeAsync(IReadOnlyList<string> lines, bool enterLast, string ok)
+        /// <summary>
+        /// Set when the tray option "Macros: use FLID typed in CRC" is on: the flight ID typed into CRC's MCA, or null.
+        /// </summary>
+        public Func<string?>? TypedFlid { get; set; }
+
+        /// <summary>Called after a macro ran on the typed flight ID (CRC's MCA is empty again).</summary>
+        public Action? TypedFlidUsed { get; set; }
+
+        private async System.Threading.Tasks.Task TypeAsync(IReadOnlyList<string> lines, bool enterLast, string ok, Action? sent = null)
         {
             if (_busy) { Say("BUSY"); return; }
             _busy = true;
             try
             {
                 var why = await CrcTyper.Type(lines, enterLast);
+                if (why == null) sent?.Invoke();
                 Say(why == null ? ok : "NOT TYPED: " + why);
             }
             catch (Exception ex) { Say("NOT TYPED: " + ex.Message.ToUpperInvariant()); }

@@ -126,6 +126,11 @@ namespace CrcCompanion.Core
         public bool AutoSwitchProfile { get; set; } = true;
         /// <summary>Primary METAR source: "REAL" (aviationweather.gov) or "VATSIM". The other is the fallback.</summary>
         public string WeatherSource { get; set; } = WeatherSources.Real;
+        /// <summary>
+        /// Workaround: a flight ID (CRC CID or callsign) typed into CRC's MCA before clicking a macro runs the macro
+        /// on it. Off by default; it watches keys typed into CRC while on.
+        /// </summary>
+        public bool MacroTypedFlid { get; set; }
     }
 
     public static class WeatherSources

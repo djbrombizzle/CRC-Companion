@@ -50,6 +50,7 @@ ERAM's RECORD toolbar, under the VIEWS selector. See [the manual](docs/MANUAL.md
 - **MSG #** records up to six commands, then a label of up to seven characters (default: the first six characters). The new button waits in the MSG slot until you move it by its tear-off bar. **MSG MAX** at 99.
 - **MACRO EDIT** edits a macro's commands (up to 25 lines) and label. **MACRO DELETE** deletes: left-click to mark with an X, then middle-click to delete. **CLR ALL MACROS** needs two clicks (burnt orange in between).
 - **Using one:** a one-command macro is typed into CRC's MCA, and you click the track in CRC to add the flight ID. A macro with several commands waits for one flight, picked by a QF in CRC (needs vUSALink App or Lite) or a middle-click in INBND, DEPT or IN SECTOR. Each command is then typed with the flight ID.
+- **Workaround, off by default:** with tray menu → **Macros: use FLID typed in CRC** on, type a flight ID (CRC CID or callsign) into CRC's empty MCA, then click a macro. Every command runs on that flight at once. While on, the companion watches keys typed into CRC's ERAM window only, to know the MCA line; nothing is saved or sent.
 - **Typing into CRC:** uses the vUSALink app's CRC echo method: SendInput into CRC's ERAM window only, once it's in front.
 - **Buttons:** saved macros are cyan with a white Verdana Bold label at the top, as on ERAM's display.
 

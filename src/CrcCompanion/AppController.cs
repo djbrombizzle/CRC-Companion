@@ -291,6 +291,7 @@ namespace CrcCompanion
             _macros = new MacroManager(_profile.Record, () => UiScale, MarkDirty);
             var (rx, ry) = Place(_profile.Record.X, _profile.Record.Y, wa.Left + 40, wa.Top + 40 + (int)(130 * UiScale));
             _macros.Show(rx, ry, Place);
+            ApplyMcaWatcher();
 
             _commands = new CommandMenusWindow(_profile.Commands, MarkDirty);
             _commands.SetScale(UiScale);
@@ -534,6 +535,29 @@ namespace CrcCompanion
         {
             _settings.AutoSwitchProfile = !_settings.AutoSwitchProfile;
             _store.SaveSettings(_settings);
+        }
+
+        public bool MacroTypedFlid => _settings.MacroTypedFlid;
+
+        public void ToggleMacroTypedFlid()
+        {
+            _settings.MacroTypedFlid = !_settings.MacroTypedFlid;
+            _store.SaveSettings(_settings);
+            ApplyMcaWatcher();
+        }
+
+        private McaWatcher? _mcaWatcher;
+
+        /// <summary>Starts or stops watching keys typed into CRC, to match the tray option.</summary>
+        private void ApplyMcaWatcher()
+        {
+            if (_settings.MacroTypedFlid && _mcaWatcher == null) _mcaWatcher = new McaWatcher();
+            else if (!_settings.MacroTypedFlid && _mcaWatcher != null) { _mcaWatcher.Dispose(); _mcaWatcher = null; }
+            if (_macros != null)
+            {
+                _macros.TypedFlid = () => _mcaWatcher?.Flid();
+                _macros.TypedFlidUsed = () => _mcaWatcher?.Cleared();
+            }
         }
 
         /// <summary>One line for the tray menu describing the session.</summary>
@@ -832,6 +856,8 @@ namespace CrcCompanion
 
         public void Dispose()
         {
+            _mcaWatcher?.Dispose();
+            _mcaWatcher = null;
             _clockTimer.Stop();
             _qfTimer.Stop();
             _saveTimer.Stop();

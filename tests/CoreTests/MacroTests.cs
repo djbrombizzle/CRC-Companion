@@ -8,6 +8,41 @@ internal static class MacroTests
 {
     public static void Run(Action<string, bool, string> check, Action<string, object?, object?> eq)
     {
+        // Flight ID typed into CRC's MCA before clicking a macro
+        var t0 = new DateTime(2026, 11, 23, 12, 0, 0, DateTimeKind.Utc);
+        var mca = new McaTracker();
+        void TypeKeys(string s) { foreach (var ch in s) mca.Key(ch == ' ' ? 0x20 : ch, false, false, t0); }
+        TypeKeys("151");
+        eq("typed CID", "151", mca.Flid(t0));
+        eq("typed CID still good at 59 s", "151", mca.Flid(t0.AddSeconds(59)));
+        eq("typed CID too old", null, mca.Flid(t0.AddSeconds(61)));
+        mca.Key(0x08, false, false, t0);
+        eq("backspace", "15", mca.Flid(t0));
+        mca.Key(0x1B, false, false, t0);
+        eq("Esc clears", null, mca.Flid(t0));
+        TypeKeys("AAL123");
+        eq("typed callsign", "AAL123", mca.Flid(t0));
+        mca.Key(0x0D, false, false, t0);
+        TypeKeys("QZ 240");
+        eq("a command isn't a flight ID", null, mca.Flid(t0));
+        mca.Key(0x1B, false, false, t0);
+        mca.Key(0x61, false, false, t0); mca.Key(0x65, false, false, t0); mca.Key(0x61, false, false, t0);
+        eq("numpad digits", "151", mca.Flid(t0));
+        mca.Clicked();
+        eq("a click in CRC makes it unknown", null, mca.Flid(t0));
+        mca.Key(0x1B, false, false, t0);
+        mca.Key(0x31, true, false, t0);
+        eq("shifted digit makes it unknown", null, mca.Flid(t0));
+        mca.Clear();
+        TypeKeys("1");
+        eq("one character is too short", null, mca.Flid(t0));
+        mca.Clear();
+        mca.Key(0x10, false, false, t0);
+        TypeKeys("ABC");
+        eq("Shift alone is ignored", "ABC", mca.Flid(t0));
+        mca.Key(0x25, false, false, t0);
+        eq("arrow key makes it unknown", null, mca.Flid(t0));
+
         eq("clean line", "QZ 340", Macros.CleanLine("  qz   340; "));
         eq("split on ;", "QZ 340|QP J|QP 22", string.Join("|", Macros.CleanLines(new[] { "qz 340;", "", "QP J; QP 22;" })));
         eq("label cut to 7", "ABCDEFG", Macros.CleanLabel("abcdefghij"));
