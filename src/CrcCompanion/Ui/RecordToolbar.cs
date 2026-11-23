@@ -21,8 +21,8 @@ namespace CrcCompanion.Ui
         public static readonly Brush BurntOrange = Make(0xC8, 0x5A, 0x1E);
         public static readonly Brush ListRow = Make(0x3C, 0x3C, 0x3C);
         public static readonly Brush DeleteX = Make(0xE0, 0x5A, 0x50);
-        /// <summary>A saved macro button at rest, cyan as on the ERAM display.</summary>
-        public static readonly Brush MacroCyan = Make(0x1C, 0xC4, 0xC4);
+        /// <summary>A saved macro button at rest, cyan as on the ERAM display (dark enough for the white label).</summary>
+        public static readonly Brush MacroCyan = Make(0x0E, 0x86, 0x8A);
 
         private static Brush Make(byte r, byte g, byte b) { var x = new SolidColorBrush(Color.FromRgb(r, g, b)); x.Freeze(); return x; }
 
