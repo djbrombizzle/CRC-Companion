@@ -45,6 +45,7 @@ namespace CrcCompanion
         private ViewsSelectorWindow? _selector;
         private MacroManager? _macros;
         private CommandMenusWindow? _commands;
+        private DrawManager? _draw;
         private AltimViewWindow? _altim;
         private WxViewWindow? _wx;
         private StripViewWindow? _inbound;
@@ -276,6 +277,10 @@ namespace CrcCompanion
             _store.SaveSettings(_settings);
 
             var wa = WorkArea;
+            // DRAW's overlay first, so every other companion window sits above it.
+            _draw = new DrawManager(_profile.Draw, () => UiScale, MarkDirty, RaiseCompanionWindows);
+            _draw.ShowOverlay();
+
             _selector = new ViewsSelectorWindow(_profile.Selector, IsViewOn, ToggleView, key => ViewFor(key) != null);
             _selector.Changed += MarkDirty;
             _selector.SetScale(UiScale);
@@ -290,6 +295,9 @@ namespace CrcCompanion
             _commands.SetScale(UiScale);
             var (cx, cy) = Place(_profile.Commands.X, _profile.Commands.Y, wa.Left + 40, wa.Top + 40 + (int)(190 * UiScale));
             _commands.ShowAt(cx, cy);
+
+            var (dx, dy) = Place(_profile.Draw.X, _profile.Draw.Y, wa.Left + 40, wa.Top + 40 + (int)(250 * UiScale));
+            _draw.ShowToolbar(dx, dy);
 
             _altim = new AltimViewWindow(this, _profile.Altim);
             _wx = new WxViewWindow(this, _profile.Wx);
@@ -365,6 +373,8 @@ namespace CrcCompanion
             _macros = null;
             foreach (var w in new Window?[] { _altim, _wx, _inbound, _inSector, _dept, _status, _selector, _commands }.Concat(_grid.Values)) w?.Close();
             _commands = null;
+            _draw?.Close();
+            _draw = null;
             _grid.Clear();
             _altim = null; _wx = null; _inbound = null; _inSector = null; _dept = null; _status = null; _selector = null;
         }
@@ -446,12 +456,23 @@ namespace CrcCompanion
             Metar.SetSource(_settings.WeatherSource);
         }
 
+        /// <summary>
+        /// Puts every companion window back above DRAW's overlay (after the overlay takes the keyboard or
+        /// starts capturing clicks, which can lift it over them).
+        /// </summary>
+        private void RaiseCompanionWindows()
+        {
+            foreach (Window w in Application.Current.Windows)
+                if (w is EramWindow ew && w is not DrawOverlayWindow && w.IsVisible) Native.RaiseTopmost(ew.Hwnd);
+        }
+
         public void SetScale(double scale)
         {
             _profile.UiScale = scale;
             _selector?.SetScale(scale);
             _macros?.SetScale(scale);
             _commands?.SetScale(scale);
+            _draw?.SetScale(scale);
             foreach (var v in Views) v.SetScale(scale);
             MarkDirty();
         }
@@ -461,6 +482,7 @@ namespace CrcCompanion
             _profile.Selector.X = _profile.Selector.Y = null;
             _profile.Record.X = _profile.Record.Y = null;
             _profile.Commands.X = _profile.Commands.Y = null;
+            _profile.Draw.X = _profile.Draw.Y = null;
             foreach (var s in new[] { _profile.Altim, _profile.Wx, _profile.Inbound, _profile.InSector, _profile.Dept, _profile.Status }.Concat(_profile.Extra.Values))
                 s.X = s.Y = null;
             SaveNow();

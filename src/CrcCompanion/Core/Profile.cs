@@ -75,6 +75,7 @@ namespace CrcCompanion.Core
         /// <summary>RECORD toolbar and its macros.</summary>
         public RecordSettings Record { get; set; } = new RecordSettings();
         public CommandMenuSettings Commands { get; set; } = new CommandMenuSettings();
+        public DrawSettings Draw { get; set; } = new DrawSettings();
         public ViewSettings Altim { get; set; } = new ViewSettings { Lines = 24, Cols = 1 };
         public ViewSettings Wx { get; set; } = new ViewSettings { Lines = 5, Cols = 1 };
         public ViewSettings Inbound { get; set; } = new ViewSettings { Lines = 20, Tearoff = true };
@@ -231,6 +232,8 @@ namespace CrcCompanion.Core
             p.Record ??= new RecordSettings();
             Macros.Sanitize(p.Record);
             p.Commands ??= new CommandMenuSettings();
+            p.Draw ??= new DrawSettings();
+            Annotations.Sanitize(p.Draw);
             p.Altim ??= new ViewSettings { Lines = 24 };
             p.Wx ??= new ViewSettings { Lines = 5 };
             p.Inbound ??= new ViewSettings { Lines = 20, Tearoff = false };

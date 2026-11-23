@@ -68,6 +68,35 @@ namespace CrcCompanion.Ui
             SetWindowLongPtr(hwnd, GWL_EXSTYLE, new IntPtr(ex));
         }
 
+        public const long WS_EX_TRANSPARENT = 0x00000020L;
+        public const uint SWP_NOMOVE = 0x0002;
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+
+        [DllImport("user32.dll")]
+        public static extern int GetSystemMetrics(int nIndex);
+
+        [DllImport("user32.dll")]
+        public static extern bool SetCursorPos(int x, int y);
+
+        /// <summary>The virtual screen (all monitors) in physical pixels.</summary>
+        public static (int X, int Y, int W, int H) VirtualScreen() =>
+            (GetSystemMetrics(76), GetSystemMetrics(77), GetSystemMetrics(78), GetSystemMetrics(79));
+
+        /// <summary>Makes a window pass every mouse click to whatever is under it (or stop doing so).</summary>
+        public static void SetClickThrough(IntPtr hwnd, bool on)
+        {
+            var ex = GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64();
+            ex = on ? ex | WS_EX_TRANSPARENT : ex & ~WS_EX_TRANSPARENT;
+            SetWindowLongPtr(hwnd, GWL_EXSTYLE, new IntPtr(ex));
+        }
+
+        /// <summary>Brings a topmost window to the top of the topmost windows without activating it.</summary>
+        public static void RaiseTopmost(IntPtr hwnd)
+        {
+            if (hwnd != IntPtr.Zero)
+                SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+        }
+
         public static void MoveWindow(IntPtr hwnd, int x, int y) =>
             SetWindowPos(hwnd, IntPtr.Zero, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
     }

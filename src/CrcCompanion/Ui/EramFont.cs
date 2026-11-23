@@ -110,7 +110,8 @@ namespace CrcCompanion.Ui
 
         public EramMetrics(int fontLevel)
         {
-            S = fontLevel switch { 1 => 10 / 12.0, 2 => 1.0, 3 => 14 / 12.0, 4 => 16 / 12.0, 5 => 18 / 12.0, _ => 1.0 };
+            // 10 px cells at FONT 1, +2 px per level (FONT 2 = 12 px); levels 6-8 are for DRAW text annotations.
+            S = fontLevel >= 1 && fontLevel <= 8 ? (8 + 2 * fontLevel) / 12.0 : 1.0;
             Cell = (int)Math.Round(12 * S);
             Cap = (int)Math.Round(11 * S);
             Row = Cap + 10;

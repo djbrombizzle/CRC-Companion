@@ -185,6 +185,30 @@ namespace CrcCompanion.Ui
             _dc.DrawGeometry(b, null, g);
         }
 
+        /// <summary>Ellipse outline filling a box.</summary>
+        public void Ellipse(Brush b, double x, double y, double w, double h, double t = 1)
+        {
+            if (_dc == null || w <= 0 || h <= 0) return;
+            var pen = new Pen(b, t); pen.Freeze();
+            _dc.DrawEllipse(null, pen, new Point(x + w / 2, y + h / 2), Math.Max(0, w / 2 - t / 2), Math.Max(0, h / 2 - t / 2));
+        }
+
+        /// <summary>Connected line segments through the points.</summary>
+        public void Polyline(Brush b, IReadOnlyList<Point> pts, double t = 1)
+        {
+            if (_dc == null || pts.Count < 2) return;
+            var pen = new Pen(b, t) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round };
+            pen.Freeze();
+            var g = new StreamGeometry();
+            using (var ctx = g.Open())
+            {
+                ctx.BeginFigure(pts[0], false, false);
+                for (int i = 1; i < pts.Count; i++) ctx.LineTo(pts[i], true, true);
+            }
+            g.Freeze();
+            _dc.DrawGeometry(null, pen, g);
+        }
+
         public void Hit(double x, double y, double w, double h, Action<MouseButton> a)
         {
             if (_dc != null) _surface.AddHit(new Rect(x, y, w, h), a);

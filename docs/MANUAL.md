@@ -13,18 +13,19 @@ This manual covers every view and menu. For a short overview, see the [README](.
 5. [The VIEWS selector](#5-the-views-selector)
 6. [RECORD: macros](#6-record-macros)
 7. [COMMAND MENUS: range, bearing, fix and time](#7-command-menus-range-bearing-fix-and-time)
-8. [Weather views: ALTIM SET and WX REPORT](#8-weather-views-altim-set-and-wx-report)
-9. [STATUS](#9-status)
-10. [Strip views: INBND, IN SECTOR and DEPT](#10-strip-views-inbnd-in-sector-and-dept)
-11. [CFR: Continuous Flight Plan Readout](#11-cfr-continuous-flight-plan-readout)
-12. [UA: Update Area](#12-ua-update-area)
-13. [MRP LIST: Meter Reference Point](#13-mrp-list-meter-reference-point)
-14. [CPDLC views](#14-cpdlc-views)
-15. [The other grid views](#15-the-other-grid-views)
-16. [Working with the vUSALink EDST app](#16-working-with-the-vusalink-edst-app)
-17. [Data sources and privacy](#17-data-sources-and-privacy)
-18. [Troubleshooting](#18-troubleshooting)
-19. [Reference](#19-reference)
+8. [DRAW: annotations](#8-draw-annotations)
+9. [Weather views: ALTIM SET and WX REPORT](#9-weather-views-altim-set-and-wx-report)
+10. [STATUS](#10-status)
+11. [Strip views: INBND, IN SECTOR and DEPT](#11-strip-views-inbnd-in-sector-and-dept)
+12. [CFR: Continuous Flight Plan Readout](#12-cfr-continuous-flight-plan-readout)
+13. [UA: Update Area](#13-ua-update-area)
+14. [MRP LIST: Meter Reference Point](#14-mrp-list-meter-reference-point)
+15. [CPDLC views](#15-cpdlc-views)
+16. [The other grid views](#16-the-other-grid-views)
+17. [Working with the vUSALink EDST app](#17-working-with-the-vusalink-edst-app)
+18. [Data sources and privacy](#18-data-sources-and-privacy)
+19. [Troubleshooting](#19-troubleshooting)
+20. [Reference](#20-reference)
 
 ---
 
@@ -154,14 +155,14 @@ The **VIEWS** button opens a grid that copies CRC's ERAM VIEWS menu. Every butto
 
 | Button | Section |
 |---|---|
-| ALTIM SET, WX REPORT | [8](#8-weather-views-altim-set-and-wx-report) |
-| STATUS | [9](#9-status) |
-| INBND LIST, DEPT LIST | [10](#10-strip-views-inbnd-in-sector-and-dept) |
-| CFR | [11](#11-cfr-continuous-flight-plan-readout) |
-| UA | [12](#12-ua-update-area) |
-| MRP LIST | [13](#13-mrp-list-meter-reference-point) |
-| CPDLC ADV, CPDLC HIST, CPDLC MSGOUT, CPDLC TOC SET | [14](#14-cpdlc-views) |
-| AUTO HO INHIB, CODE, CONFLCT ALERT, CRR, FLIGHT EVENT, GROUP SUP, HOLD LIST, SAA FILTER | [15](#15-the-other-grid-views) |
+| ALTIM SET, WX REPORT | [9](#9-weather-views-altim-set-and-wx-report) |
+| STATUS | [10](#10-status) |
+| INBND LIST, DEPT LIST | [11](#11-strip-views-inbnd-in-sector-and-dept) |
+| CFR | [12](#12-cfr-continuous-flight-plan-readout) |
+| UA | [13](#13-ua-update-area) |
+| MRP LIST | [14](#14-mrp-list-meter-reference-point) |
+| CPDLC ADV, CPDLC HIST, CPDLC MSGOUT, CPDLC TOC SET | [15](#15-cpdlc-views) |
+| AUTO HO INHIB, CODE, CONFLCT ALERT, CRR, FLIGHT EVENT, GROUP SUP, HOLD LIST, SAA FILTER | [16](#16-the-other-grid-views) |
 
 A lit button means its view is shown. **IN SECTOR** is a companion extra with its own button in a row under the grid.
 
@@ -204,7 +205,7 @@ Click a macro button with the left or middle button. What happens next depends o
 1. The macro button lights up and waits up to 60 seconds for one flight. The line under the RECORD toolbar says what it's waiting for.
 2. Pick the flight in either of these ways:
    - **Middle-click it in INBND, DEPT or IN SECTOR.** This needs nothing else running. While a macro is waiting, the middle-click goes to the macro instead of CFR.
-   - **QF it in CRC**: type `QF AAL123`, or type `QF ` and click the track. This needs vUSALink App or vUSALink-Lite, which reads CRC's QF readout and tells the companion which flight it was ([section 16](#16-working-with-the-vusalink-edst-app)). A middle-click on a data block with the MCA empty isn't always a QF: on another sector's flight, CRC forces the data block instead.
+   - **QF it in CRC**: type `QF AAL123`, or type `QF ` and click the track. This needs vUSALink App or vUSALink-Lite, which reads CRC's QF readout and tells the companion which flight it was ([section 17](#17-working-with-the-vusalink-edst-app)). A middle-click on a data block with the MCA empty isn't always a QF: on another sector's flight, CRC forces the data block instead.
 
    A one-command macro needs neither: CRC adds the flight ID itself when you click the track. A macro with several commands has to type the flight ID into every line, so the companion must learn the flight first.
 3. Each command is typed into CRC with the flight ID and Enter, one after another.
@@ -266,7 +267,67 @@ LD and LE are dimmed in the menu. Clicking them only shows `NOT AVAILABLE IN CRC
 
 ---
 
-## 8. Weather views: ALTIM SET and WX REPORT
+## 8. DRAW: annotations
+
+The **DRAW** button sits under COMMAND MENUS and works like ERAM's Draw toolbar (ERAM manual 5.2 and 5.3). You can mark areas of the screen with rectangles, circles, lines and text, as a temporary scratch pad. CRC has no DRAW, so the companion draws the annotations in a see-through layer over CRC. Up to 200 annotations are allowed.
+
+Click **DRAW** to open or close its toolbar:
+
+| Button | What it does |
+|---|---|
+| Rectangle, circle, line, **A** | Draw that kind of annotation. The button outlines show the selected color. |
+| **O SIZE** | Circle radius in NM, for map-anchored circles. Crossed out: see "Display anchor only" below. |
+| **COLOR** | Brightness of all annotations, 0 to 100 (default 60). Left-click to lower, middle-click to raise. |
+| Color selection | Picks green, white, coral or yellow for new annotations. |
+| **FONT** | Sets **A FONT** back to its default, 2. |
+| **A FONT** | Text size for new text, 1 to 8. Left-click to lower, middle-click to raise. |
+| **DISP** | The anchor. Always DISP here. |
+| **DEL** | Delete mode: middle-click an annotation's handle to delete it. |
+| **DEL ALL** | Deletes every annotation. It turns burnt orange; click it again to confirm. |
+
+Press **Esc** (ERAM's CLEAR) to cancel whatever you're drawing, moving or deleting.
+
+### Drawing
+
+**Rectangle or circle**
+1. Click the rectangle or circle button.
+2. Left-click one corner, move the mouse to size the white frame, and left-click again.
+3. The cursor jumps to the top-left corner and the frame follows it. Move it where you want it and middle-click to anchor. It turns the selected color.
+
+**Line**
+1. Click the line button.
+2. Left-click the first point, then left-click each further point. A line can have up to 29 segments.
+3. Middle-click to anchor it.
+
+**Text**
+1. Click **A**.
+2. Left-click where the text should go. A white box opens and takes the keyboard.
+3. Type up to 20 characters a line and up to 5 lines; long lines wrap. Backspace works.
+4. Press **Enter**, or middle-click, to anchor it.
+
+While a drawing button is active the companion takes every click, so clicks don't reach CRC. Anchor the annotation or press Esc to give the mouse back to CRC.
+
+### Changing annotations
+
+Each annotation has a small handle at its top left, a box with **D**. Handles show only while the DRAW toolbar is open.
+
+- **Move:** left-click the handle. A white copy follows the mouse; middle-click to place it. The original stays until then.
+- **Resize a rectangle or circle:** left-click the handle, then left-click again to switch to sizing from the bottom-right corner. Middle-click to anchor.
+- **Recolor:** pick a color, then middle-click the handle. For text, this also applies the **A FONT** size. Text you anchored earlier otherwise keeps its size.
+- **Delete:** click **DEL**, then middle-click the handle.
+
+Lines can't be resized; delete one and draw it again.
+
+### Good to know
+
+- **Display anchor only:** ERAM can anchor annotations to the map (M), so they move with map offsets and range changes. CRC doesn't tell other programs where its map is, so the companion anchors every annotation to the display (D). Annotations stay put on screen when you pan or zoom CRC. This is also why **O SIZE** is crossed out, as ERAM does for display-anchored circles.
+- **Clicks under annotations:** with the DRAW toolbar closed, every click passes through annotations to CRC. With it open, a click right on an annotation's line or text doesn't reach CRC; close the toolbar first.
+- **Saving:** annotations, color, brightness and font are saved in the profile. Switching profile switches annotations.
+- **Resetting positions:** **Reset view positions** moves the DRAW button back under COMMAND MENUS. Annotations stay where they are.
+
+---
+
+## 9. Weather views: ALTIM SET and WX REPORT
 
 ### ALTIM SET (Altimeter Settings)
 
@@ -308,7 +369,7 @@ Scroll with the arrows, by clicking the track, or with the mouse wheel.
 
 ---
 
-## 9. STATUS
+## 10. STATUS
 
 ERAM's STATUS view, with text you control. It starts with the lines from an FAA Academy ERAM frame: `CH: B - ACTIVE`, `CA ON`, `MCI ON`, `WEATHER` and so on.
 
@@ -319,7 +380,7 @@ ERAM's STATUS view, with text you control. It starts with the lines from an FAA 
 
 ---
 
-## 10. Strip views: INBND, IN SECTOR and DEPT
+## 11. Strip views: INBND, IN SECTOR and DEPT
 
 These lists come from VATSIM's live data for your ARTCC and refresh every 15 seconds.
 
@@ -357,7 +418,7 @@ These are drawn like ERAM's Inbound and Departure List views (R-Position User Ma
 
 **Highlighting:** click a flight's line to highlight it, and click again to clear it.
 
-**Send to CFR:** middle-click a flight's line (here or in IN SECTOR) to add it to the CFR view ([section 11](#11-cfr-continuous-flight-plan-readout)). CFR opens if it's hidden.
+**Send to CFR:** middle-click a flight's line (here or in IN SECTOR) to add it to the CFR view ([section 12](#12-cfr-continuous-flight-plan-readout)). CFR opens if it's hidden.
 
 ### IN SECTOR
 
@@ -375,7 +436,7 @@ The mark shows whose frequency the aircraft is tuned to, from VATSIM's voice dat
 
 ---
 
-## 11. CFR: Continuous Flight Plan Readout
+## 12. CFR: Continuous Flight Plan Readout
 
 ERAM's Continuous Flight Plan Readout view (ERAM manual chapter 8). It keeps up to ten flight plans on screen, kept up to date from VATSIM.
 
@@ -414,7 +475,7 @@ ERAM's Continuous Flight Plan Readout view (ERAM manual chapter 8). It keeps up 
 
 | Column | Shows |
 |---|---|
-| **FLID** | `CID ACID(sector)`. The CID and owning sector come from the vUSALink EDST app ([section 16](#16-working-with-the-vusalink-edst-app)); without it, just the callsign. A coral **A** in front means the flight isn't ADS-B equipped: its ICAO equipment lists no ADS-B code (B1, B2, U1, U2, V1, V2). |
+| **FLID** | `CID ACID(sector)`. The CID and owning sector come from the vUSALink EDST app ([section 17](#17-working-with-the-vusalink-edst-app)); without it, just the callsign. A coral **A** in front means the flight isn't ADS-B equipped: its ICAO equipment lists no ADS-B code (B1, B2, U1, U2, V1, V2). |
 | **TYP** | Type and equipment suffix, `B738/L`. |
 | **BCN** | Assigned beacon code. |
 | **SPD** | Filed cruise speed (TAS). |
@@ -446,7 +507,7 @@ If a flight disconnects from VATSIM, its last readout stays on screen until you 
 
 ---
 
-## 12. UA: Update Area
+## 13. UA: Update Area
 
 ERAM's Update Area view (ERAM manual 6.3): a **Message Waiting Area** and a **text area** for messages you need to see and acknowledge.
 
@@ -495,7 +556,7 @@ In real ERAM the UA carries GI (General Information) messages sent by other posi
 
 ---
 
-## 13. MRP LIST: Meter Reference Point
+## 14. MRP LIST: Meter Reference Point
 
 ERAM's Meter Reference Point view (TI 6110.100 figures 4-220 to 4-224), built from [VATFLOW](https://vatflow.io)'s FCA (flow constrained area) programs.
 
@@ -542,7 +603,7 @@ The sequencing is a port of VATFLOW's own metering code, and it uses VATFLOW's r
 
 ---
 
-## 14. CPDLC views
+## 15. CPDLC views
 
 The four CPDLC buttons show the datalink traffic for your ARTCC from [vUSAlink](https://github.com/djbrombizzle/vUSAlink)'s shared hub.
 
@@ -608,11 +669,11 @@ Shows whether the hub link is up, and lists the aircraft logged on to CPDLC in y
 
 - **Matching replies:** the hub's feed has no message reference numbers, so a reply is matched to the oldest unanswered uplink to that aircraft.
 - **How much is kept:** the hub keeps its last 60 messages per ARTCC, and the companion keeps up to 500 while it runs.
-- **CID column:** filled when the vUSALink EDST app has learned the aircraft's CID ([section 16](#16-working-with-the-vusalink-edst-app)).
+- **CID column:** filled when the vUSALink EDST app has learned the aircraft's CID ([section 17](#17-working-with-the-vusalink-edst-app)).
 
 ---
 
-## 15. The other grid views
+## 16. The other grid views
 
 Each has the usual M menu (O/T, BORDER, LINES, FONT, BRIGHT) plus the rows listed. Typed entries use the entry box: `A B -C`.
 
@@ -695,7 +756,7 @@ Fix names and fix-radial-distance entries (`BOS090010`) are resolved from CRC's 
 
 ---
 
-## 16. Working with the vUSALink EDST app
+## 17. Working with the vUSALink EDST app
 
 [vUSALink App and vUSALink-Lite](https://github.com/djbrombizzle/vUSALink-App) connect the vUSAlink EDST to CRC. Two of their features also feed the companion.
 
@@ -719,15 +780,15 @@ The app drops a CID when the pilot reconnects (CRC gives them a new one) or leav
 
 ### QF to CFR
 
-The same file tells the companion when you QF an aircraft in CRC. With CFR open, each aircraft you QF (middle-click its data block, or type QF) is added to CFR within a few seconds ([section 11](#11-cfr-continuous-flight-plan-readout)). Both vUSALink App and vUSALink-Lite do this; nothing needs to be set up.
+The same file tells the companion when you QF an aircraft in CRC. With CFR open, each aircraft you QF (middle-click its data block, or type QF) is added to CFR within a few seconds ([section 12](#12-cfr-continuous-flight-plan-readout)). Both vUSALink App and vUSALink-Lite do this; nothing needs to be set up.
 
 ### GI notes
 
-Notes sent with the EDST's **GI** button appear in the companion's UA view ([section 12](#12-ua-update-area)).
+Notes sent with the EDST's **GI** button appear in the companion's UA view ([section 13](#13-ua-update-area)).
 
 ---
 
-## 17. Data sources and privacy
+## 18. Data sources and privacy
 
 | Data | Source | When it's read |
 |---|---|---|
@@ -750,7 +811,7 @@ Notes sent with the EDST's **GI** button appear in the companion's UA view ([sec
 
 ---
 
-## 18. Troubleshooting
+## 19. Troubleshooting
 
 | Problem | What to check |
 |---|---|
@@ -763,14 +824,14 @@ Notes sent with the EDST's **GI** button appear in the companion's UA view ([sec
 | UA says `VATFLOW TMU DOWN` | vatflow-hub isn't answering. The companion reconnects on its own. |
 | MRP says `LOADING VATFLOW` for a long time | The first open downloads about 5 MB of route data. Check your internet connection. |
 | MRP is empty | Your ARTCC has no FCA enabled in VATFLOW. Turn off M → **ACTIVE** to see disabled ones. |
-| CFR or CPDLC CIDs are blank | Run the vUSALink app and QF the aircraft in CRC ([section 16](#16-working-with-the-vusalink-edst-app)). |
+| CFR or CPDLC CIDs are blank | Run the vUSALink app and QF the aircraft in CRC ([section 17](#17-working-with-the-vusalink-edst-app)). |
 | A macro says `NOT TYPED` | CRC isn't running, has no ERAM window open, or wouldn't come to the front. If CRC runs as administrator, run the companion as administrator too. |
 | Typing goes to the wrong window | Clicking a view never takes the keyboard. Only an open entry box or edit field does. Press Esc to hand the keyboard back to CRC. |
 | Something crashed | Errors are logged to `%APPDATA%\CRCCompanion\error.log`. |
 
 ---
 
-## 19. Reference
+## 20. Reference
 
 ### Number ranges
 

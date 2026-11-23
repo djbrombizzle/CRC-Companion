@@ -54,6 +54,13 @@ ERAM's Command Menus button, under RECORD. See [the manual](docs/MANUAL.md#7-com
 - **RNG BRG** lists LA, LB, LC, LD and LE. Picking LA, LB or LC types the code into CRC's MCA, and you finish the entry in CRC.
 - LD and LE are dimmed: CRC doesn't run them.
 
+## DRAW (annotations)
+
+ERAM's Draw toolbar, under COMMAND MENUS. See [the manual](docs/MANUAL.md#8-draw-annotations).
+- Rectangles, circles, lines (up to 29 segments) and text (20 characters by 5 lines, A FONT 1-8), up to 200 annotations, drawn over CRC.
+- Four colors with a shared brightness (COLOR, default 60). Move, resize, recolor and delete through each annotation's D handle; DEL ALL needs two clicks.
+- Display-anchored only: CRC doesn't share its map position, so MAP anchoring and O SIZE aren't available.
+
 ## CFR (Continuous Flight Plan Readout)
 
 Laid out like ERAM's CFR view (manual chapter 8): title bar with DEL ALL and SHOW FIELDS, then FLID TYP BCN SPD FIX TIM ALT RTE/RMK with a rule under each flight plan. The readouts update from VATSIM every poll.
