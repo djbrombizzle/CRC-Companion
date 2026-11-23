@@ -26,7 +26,64 @@ namespace CrcCompanion.Core
         /// The filed route as ERAM prints it: "SFO..SLC.J154.OCS..DBQ.JVL4.ORD". Direct legs are "..", an airway or
         /// procedure is joined to the fixes either side with single dots. DCT and speed/level groups are dropped.
         /// </summary>
-        public static string Route(string departure, string route, string arrival, Func<string, string> airport)
+        public static string Route(string departure, string route, string arrival, Func<string, string> airport) =>
+            Dotted(airport(departure ?? ""), Tokens(departure, route, arrival, airport), airport(arrival ?? ""));
+
+        /// <summary>
+        /// The route as <see cref="Route"/> prints it, but only from the next point ahead of the aircraft:
+        /// "EGLL..GVE.J30.<rest>" once the fixes before GVE are behind it. The departure airport stays first.
+        /// <paramref name="anchors"/> is the expanded route (departure, fixes along airways and procedures,
+        /// destination) and <paramref name="progress"/> the index of the first anchor ahead (VATFLOW's
+        /// ProgressIndex). When the next point lies inside an airway, the route resumes at that point and keeps
+        /// the airway: "EGLL..XYZ.J30.ABC..". Nothing is trimmed when the aircraft hasn't passed a filed fix yet.
+        /// </summary>
+        public static string RouteAhead(string departure, string route, string arrival, Func<string, string> airport,
+            IReadOnlyList<string> anchors, int progress)
+        {
+            var dep = airport(departure ?? "");
+            var arr = airport(arrival ?? "");
+            var tokens = Tokens(departure, route, arrival, airport);
+            if (anchors.Count < 2 || progress <= 0 || progress >= anchors.Count) return Dotted(dep, tokens, arr);
+            var next = anchors[progress];
+
+            // Where each filed fix sits in the expanded route (-1 when it didn't resolve).
+            var at = new int[tokens.Count];
+            int cursor = 0;
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                at[i] = -1;
+                if (IsConnector(tokens[i])) continue;
+                for (int j = cursor; j < anchors.Count; j++)
+                    if (string.Equals(anchors[j], tokens[i], StringComparison.OrdinalIgnoreCase)) { at[i] = j; cursor = j + 1; break; }
+            }
+
+            int k = -1;
+            for (int i = 0; i < tokens.Count; i++)
+                if (at[i] >= progress) { k = i; break; }
+
+            List<string> ahead;
+            if (k < 0)
+            {
+                // Past the last filed fix: what's left is a trailing procedure or airway (or nothing).
+                int last = -1;
+                for (int i = 0; i < tokens.Count; i++) if (at[i] >= 0) last = i;
+                if (last < 0) return Dotted(dep, tokens, arr);
+                if (Same(next, arrival, arr)) return Dotted(dep, new List<string>(), arr);   // only the destination is left
+                ahead = tokens.Skip(last + 1).ToList();
+                if (ahead.Count > 0 && IsConnector(ahead[0])) ahead.Insert(0, next);
+            }
+            else if (k > 0 && IsConnector(tokens[k - 1]) && at[k] > progress)
+            {
+                // The next point is inside the airway or procedure leading to fix k. A SID right after departure is
+                // kept whole; mid-airway, the route resumes at that point and keeps the airway.
+                ahead = k - 1 == 0 ? tokens.ToList() : new[] { next, tokens[k - 1] }.Concat(tokens.Skip(k)).ToList();
+            }
+            else ahead = tokens.Skip(k).ToList();
+            return Dotted(dep, ahead, arr);
+        }
+
+        /// <summary>Filed route tokens without DCT, speed/level groups, or the departure and destination themselves.</summary>
+        private static List<string> Tokens(string? departure, string? route, string? arrival, Func<string, string> airport)
         {
             var dep = airport(departure ?? "");
             var arr = airport(arrival ?? "");
@@ -39,7 +96,12 @@ namespace CrcCompanion.Core
             }
             if (tokens.Count > 0 && Same(tokens[0], departure, dep)) tokens.RemoveAt(0);
             if (tokens.Count > 0 && Same(tokens[^1], arrival, arr)) tokens.RemoveAt(tokens.Count - 1);
+            return tokens;
+        }
 
+        /// <summary>ERAM's dotted form: ".." for direct legs, single dots joining an airway or procedure.</summary>
+        private static string Dotted(string dep, List<string> tokens, string arr)
+        {
             var sb = new StringBuilder(dep);
             bool afterConnector = false;
             foreach (var t in tokens)

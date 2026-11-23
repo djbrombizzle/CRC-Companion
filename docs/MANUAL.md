@@ -520,6 +520,7 @@ ERAM's Continuous Flight Plan Readout view (ERAM manual chapter 8). It keeps up 
 - `..` joins two fixes flown direct.
 - A single `.` joins a fix to an airway or procedure: `SFO..SLC.J154.OCS..DBQ.JVL4.ORD`.
 - `DCT` and speed/level groups are dropped.
+- **Airborne, only what's ahead:** the departure airport stays first, the fixes the aircraft has already passed are dropped, and the route continues from the next point ahead. For a flight from EGLL heading to GVE: `EGLL..GVE.J30...`. In the middle of an airway it resumes at the next fix on that airway, keeping the airway: `EGLL..XYZ.J30.ABC..`. Where the aircraft is along its route comes from VATFLOW's route engine (the same one MRP uses, with airways and procedures expanded) once VATFLOW's route data is loaded. Before that, the filed fixes CRC's nav data knows are used. On the ground, prefiled, or still on its SID, the whole route shows. The boxed **\*** and SHOW FIELDS work on this route as before.
 
 ### The CFR menu
 

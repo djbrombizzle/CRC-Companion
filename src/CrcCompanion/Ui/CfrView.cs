@@ -159,9 +159,23 @@ namespace CrcCompanion.Ui
             public string Cid = "", Sector = "";
             public bool NonAdsb;
             public string Typ = "", Bcn = "", Spd = "", Fix = "", Tim = "", Alt = "";
+            /// <summary>Route from the next point ahead (airborne), or the whole route.</summary>
             public string Route = "";
             public string Remarks = "";
             public bool More;
+        }
+
+        /// <summary>
+        /// The route from the next point ahead of an airborne aircraft (departure first, passed fixes dropped), as
+        /// VATFLOW places it on its route. On the ground, prefiled, or when it can't be placed: the whole route.
+        /// </summary>
+        private string RouteAhead(Pilot? pilot, FlightPlan plan, Func<string, string> airport)
+        {
+            if (pilot == null || pilot.Groundspeed < 50) return Cfr.Route(plan.Departure, plan.Route, plan.Arrival, airport);
+            var progress = Live.RouteProgress(pilot, plan);
+            return progress is { } pr
+                ? Cfr.RouteAhead(plan.Departure, plan.Route, plan.Arrival, airport, pr.Names, pr.Progress)
+                : Cfr.Route(plan.Departure, plan.Route, plan.Arrival, airport);
         }
 
         private List<Readout> Rows()
@@ -187,7 +201,7 @@ namespace CrcCompanion.Ui
                         Fix = fix,
                         Tim = tim,
                         Alt = plan.FiledAltitude,
-                        Route = Cfr.Route(plan.Departure, plan.Route, plan.Arrival, airport),
+                        Route = RouteAhead(pilot, plan, airport),
                         Remarks = plan.Remarks,
                     };
                     _last[cs] = r;

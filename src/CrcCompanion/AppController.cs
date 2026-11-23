@@ -102,6 +102,38 @@ namespace CrcCompanion
             return _edstCids.Find(callsign);
         }
 
+        public (IReadOnlyList<string> Names, int Progress)? RouteProgress(Pilot pilot, FlightPlan plan)
+        {
+            try
+            {
+                List<RouteAnchor> anchors;
+                if (_fcaNav != null) anchors = FcaRoute.BuildAnchors(_fcaNav, plan.Departure, plan.Arrival, plan.Route, _fcaWorld.Airport);
+                else
+                {
+                    // No VATFLOW data yet: departure, the filed fixes CRC's nav data knows, destination.
+                    anchors = new List<RouteAnchor>();
+                    var dep = _fcaWorld.Airport(plan.Departure);
+                    LatLon near = dep ?? pilot.Pos;
+                    if (dep != null) anchors.Add(new RouteAnchor(plan.Departure.ToUpperInvariant(), dep.Value, true));
+                    foreach (var name in Cfr.Points(plan.Route))
+                    {
+                        var pos = _nav?.Find(name, near);
+                        if (pos == null || Geo.DistanceNm(near, pos.Value) > 900) continue;
+                        anchors.Add(new RouteAnchor(name, pos.Value));
+                        near = pos.Value;
+                    }
+                    var arr = _fcaWorld.Airport(plan.Arrival);
+                    if (arr != null) anchors.Add(new RouteAnchor(plan.Arrival.ToUpperInvariant(), arr.Value, true));
+                }
+                if (anchors.Count < 2) return null;
+                int idx = FcaRoute.ProgressIndex(anchors, pilot.Pos, pilot.Heading);
+                // As VATFLOW's trimAnchorsAhead: well clear of the departure airport, it's behind.
+                if (anchors[0].Airport && idx == 0 && Geo.DistanceNm(pilot.Pos, anchors[0].Pos) > 25) idx = 1;
+                return (anchors.Select(a => a.Name).ToList(), idx);
+            }
+            catch (Exception) { return null; }
+        }
+
         /// <summary>The aircraft the vUSALink EDST app learned this CRC CID for, or null.</summary>
         public EdstCidBook.Entry? EdstCidByCid(string cid)
         {

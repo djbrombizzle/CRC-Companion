@@ -73,7 +73,7 @@ Laid out like ERAM's CFR view (manual chapter 8): title bar with DEL ALL and SHO
 
 - **Add:** with CFR open, QF the aircraft in CRC (type `QF UAL123`, or `QF ` and click the track) and it's added within a few seconds; this needs vUSALink App or Lite, which reads CRC's QF readouts. Or middle-click a flight in INBND, DEPT or IN SECTOR (CFR opens if hidden). Or left-click the view and type `QF R UAL123` (or just `UAL123`; several at once; `-UAL123` removes). A CRC CID works too (`QF R 151`) once the vUSALink app has seen that aircraft's QF. A new readout's FLID is green for 30 seconds. Past ENTRIES, the oldest drops off.
 - **Delete:** middle-click a FLID, then DELETE. DEL ALL clears the view.
-- **Route:** ERAM dotted format (`SFO..SLC.J154.OCS..ORD`), cut at RTE characters. A boxed `*` shows the rest of the route, a boxed `R` the remarks.
+- **Route:** ERAM dotted format (`SFO..SLC.J154.OCS..ORD`), cut at RTE characters. Airborne, only the route ahead shows: the departure, then the next point onward (`EGLL..GVE.J30...`), placed with VATFLOW's route engine. A boxed `*` shows the rest of the route, a boxed `R` the remarks.
 - **FIX / TIM:** on the ground or prefiled, the departure airport and proposed time (`P1530`). Airborne, the next fix ahead on the route (the first one inside your facility while still outside it) with an estimate from groundspeed (`E1615`).
 - **Coral A:** the ICAO equipment lists no ADS-B surveillance code (B1/B2/U1/U2/V1/V2).
 - **Menu:** ENTRIES 1-10, RTE 30-100 (left-click decreases, middle-click increases), FILTERS to show or hide ALT BCN CID FIX LBL RTE SPD TIM TYP. SHOW FIELDS shows hidden columns and the full route until clicked again; it's grayed out when nothing is hidden.

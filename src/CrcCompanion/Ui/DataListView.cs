@@ -42,6 +42,11 @@ namespace CrcCompanion.Ui
         EdstCidBook.Entry? EdstCid(string callsign);
         /// <summary>The aircraft the vUSALink EDST app learned this CRC CID for, or null.</summary>
         EdstCidBook.Entry? EdstCidByCid(string cid);
+        /// <summary>
+        /// An airborne flight's expanded route (anchor names) and the index of the first anchor ahead of it, from
+        /// VATFLOW's route engine when its data is loaded, else from the filed fixes. Null when it can't be placed.
+        /// </summary>
+        (IReadOnlyList<string> Names, int Progress)? RouteProgress(Pilot pilot, FlightPlan plan);
     }
 
     /// <summary>One body line: a heading (spaced like a WX report break) or an entry.</summary>

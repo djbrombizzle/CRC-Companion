@@ -70,6 +70,23 @@ internal static class CfrTests
         eq("remove", "DEL AAL3", Cfr.Apply(items, "-AAL3", 3, Has));
         eq("after remove", "SWA4,DAL2", string.Join(",", items));
 
+        // Route from the next point ahead of the aircraft (VATFLOW progress index into the expanded route)
+        Func<string, string> apt = id => id.Length == 4 && id[0] == 'K' ? id.Substring(1) : id;
+        const string rt = "BUCGO L9 GVE J30 ABC DEF";
+        // Expanded: EGLL, BUCGO, (L9 fixes) XRAY, GVE, (J30 fixes) YANKE, ZULUU, ABC, DEF, KDFW
+        var names = new[] { "EGLL", "BUCGO", "XRAY", "GVE", "YANKE", "ZULUU", "ABC", "DEF", "KDFW" };
+        eq("whole route", "EGLL..BUCGO.L9.GVE.J30.ABC..DEF..DFW", Cfr.Route("EGLL", rt, "KDFW", apt));
+        eq("not past anything yet", "EGLL..BUCGO.L9.GVE.J30.ABC..DEF..DFW", Cfr.RouteAhead("EGLL", rt, "KDFW", apt, names, 1));
+        eq("heading to GVE", "EGLL..GVE.J30.ABC..DEF..DFW", Cfr.RouteAhead("EGLL", rt, "KDFW", apt, names, 3));
+        eq("mid J30, heading to ZULUU", "EGLL..ZULUU.J30.ABC..DEF..DFW", Cfr.RouteAhead("EGLL", rt, "KDFW", apt, names, 5));
+        eq("heading to DEF", "EGLL..DEF..DFW", Cfr.RouteAhead("EGLL", rt, "KDFW", apt, names, 7));
+        eq("only the destination left", "EGLL..DFW", Cfr.RouteAhead("EGLL", rt, "KDFW", apt, names, 8));
+        eq("still on the SID stays whole", "IAD.JCOBY4.FAK..DFW",
+            Cfr.RouteAhead("KIAD", "JCOBY4 FAK", "KDFW", apt, new[] { "KIAD", "SAAA", "SBBB", "FAK", "KDFW" }, 2));
+        eq("on the STAR", "IAD..SBBB.BOOVE7.DFW",
+            Cfr.RouteAhead("KIAD", "FAK BOOVE7", "KDFW", apt, new[] { "KIAD", "FAK", "SAAA", "SBBB", "KDFW" }, 3));
+        eq("no progress: whole route", "EGLL..BUCGO.L9.GVE.J30.ABC..DEF..DFW", Cfr.RouteAhead("EGLL", rt, "KDFW", apt, names, 0));
+
         // CRC CIDs, looked up through the vUSALink app's cids.json
         var book = new EdstCidBook();
         book.Replace(EdstCidBook.Parse(@"[
