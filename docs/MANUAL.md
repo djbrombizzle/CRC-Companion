@@ -202,8 +202,10 @@ Click a macro button with the left or middle button. What happens next depends o
 **Several commands** (for example `QZ 340`, `QP J`, `QP 22`):
 1. The macro button lights up and waits up to 60 seconds for one flight. The line under the RECORD toolbar says what it's waiting for.
 2. Pick the flight in either of these ways:
-   - **QF it in CRC**, by middle-clicking its data block with the MCA empty. This needs vUSALink App or vUSALink-Lite, which reads CRC's QF readouts ([section 15](#15-working-with-the-vusalink-edst-app)).
-   - **Middle-click it in INBND, DEPT or IN SECTOR.** While a macro is waiting, the middle-click goes to the macro instead of CFR.
+   - **Middle-click it in INBND, DEPT or IN SECTOR.** This needs nothing else running. While a macro is waiting, the middle-click goes to the macro instead of CFR.
+   - **QF it in CRC**: type `QF AAL123`, or type `QF ` and click the track. This needs vUSALink App or vUSALink-Lite, which reads CRC's QF readout and tells the companion which flight it was ([section 15](#15-working-with-the-vusalink-edst-app)). A middle-click on a data block with the MCA empty isn't always a QF: on another sector's flight, CRC forces the data block instead.
+
+   A one-command macro needs neither: CRC adds the flight ID itself when you click the track. A macro with several commands has to type the flight ID into every line, so the companion must learn the flight first.
 3. Each command is typed into CRC with the flight ID and Enter, one after another.
 
 Click the lit button again to cancel. These macros take one flight only; ERAM gives the same `TOO MANY FLIGHT IDS` error.
