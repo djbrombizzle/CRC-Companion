@@ -487,7 +487,8 @@ ERAM's Continuous Flight Plan Readout view (ERAM manual chapter 8). It keeps up 
 
 - **New readouts:** a new readout's FLID shows in green for 30 seconds.
 - **Too many:** when you add more than ENTRIES allows, the oldest readout drops off.
-- **Already listed:** adding a flight that's already in the view moves it to the end.
+- **Order:** the newest readout is at the top and the others move down. Past ENTRIES, the oldest (bottom) one drops off.
+- **Already listed:** adding a flight that's already in the view moves it back to the top.
 - **No flight plan:** a callsign with no flight plan on VATSIM is refused with `NO FP UAL123`.
 
 **QF from CRC: how it works.**
@@ -498,7 +499,7 @@ ERAM's Continuous Flight Plan Readout view (ERAM manual chapter 8). It keeps up 
 - **When CFR is hidden:** QFs aren't added.
 - **Delay:** expect 1–3 seconds while the app reads CRC's screen.
 - **Misread callsigns:** the app sometimes misreads a callsign off CRC's screen, for example `CIALI183` for `UAL1183`. The companion matches such a misread to the one live flight it can only stand for, folding together characters that look alike (U and CI, 1 and I or L, 0 and O, 5 and S, 8 and B, 2 and Z, 6 and G). The flight is then added with its CID. Macros waiting for a QF use the corrected flight too.
-- **When nothing is added:** if the readout can't be matched to exactly one real VATSIM flight, nothing is added; QF again or type the callsign. If the app can't read the new readout, it may pick up the readout already on screen instead, which only moves that flight to the end.
+- **When nothing is added:** if the readout can't be matched to exactly one real VATSIM flight, nothing is added; QF again or type the callsign. If the app can't read the new readout, it may pick up the readout already on screen instead, which only moves that flight back to the top.
 
 ### Columns
 

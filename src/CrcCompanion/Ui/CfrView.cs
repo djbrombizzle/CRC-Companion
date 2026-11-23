@@ -183,7 +183,8 @@ namespace CrcCompanion.Ui
             var f = Live.Facility;
             Func<string, string> airport = id => f != null ? f.DisplayAirport(id) : (id.Length == 4 && id[0] == 'K' ? id.Substring(1) : id);
             var rows = new List<Readout>();
-            foreach (var cs in Settings.Items.ToList())
+            // Newest at the top: the list is kept oldest first, so it's drawn in reverse.
+            foreach (var cs in Settings.Items.AsEnumerable().Reverse().ToList())
             {
                 var (pilot, plan) = FindPlan(cs);
                 Readout r;
