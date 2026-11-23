@@ -364,6 +364,8 @@ namespace CrcCompanion.Core
             /// <summary>Owning sector from the QF ("32"), or "".</summary>
             public string Sector { get; init; } = "";
             public bool Verified { get; init; }
+            /// <summary>When the app read this aircraft's QF readout (UTC). Every QF, even a repeat, renews it.</summary>
+            public DateTime At { get; init; }
         }
 
         private Dictionary<string, Entry> _byCallsign = new Dictionary<string, Entry>(StringComparer.OrdinalIgnoreCase);
@@ -390,11 +392,23 @@ namespace CrcCompanion.Core
                     Callsign = cs,
                     Sector = GiMessage.Str(o, "sector").Trim().ToUpperInvariant(),
                     Verified = o.TryGetProperty("verified", out var v) && v.ValueKind == JsonValueKind.True,
+                    At = DateTime.TryParse(GiMessage.Str(o, "at"), CultureInfo.InvariantCulture,
+                            DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var at) ? at : DateTime.MinValue,
                 };
             }
             return map;
         }
 
         public void Replace(Dictionary<string, Entry> map) => _byCallsign = map;
+
+        /// <summary>
+        /// Aircraft QF'd in CRC after <paramref name="since"/>, oldest first: the app renews a pair's time on every
+        /// QF readout it reads (typed QF, or a middle-click on a data block), and only then.
+        /// </summary>
+        public List<Entry> QfSince(DateTime since) =>
+            _byCallsign.Values.Where(e => e.At > since).OrderBy(e => e.At).ToList();
+
+        /// <summary>The newest QF time in the book (MinValue when empty).</summary>
+        public DateTime LatestQf => _byCallsign.Count == 0 ? DateTime.MinValue : _byCallsign.Values.Max(e => e.At);
     }
 }

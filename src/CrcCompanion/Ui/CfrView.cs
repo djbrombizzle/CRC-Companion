@@ -13,7 +13,9 @@ namespace CrcCompanion.Ui
     /// CFR, the Continuous Flight Plan Readout view (ERAM manual ch. 8): up to ten flight plans, kept up to date
     /// from VATSIM. Columns FLID TYP BCN SPD FIX TIM ALT RTE/RMK, a rule under each entry, title bar DEL ALL and
     /// SHOW FIELDS. A non-ADS-B flight has a coral "A" before its FLID; a new readout's FLID is green for a while.
-    /// Add with QF R &lt;FLID&gt; (left-click the view). Middle-click a FLID to delete it. Boxed * shows the rest of
+    /// Add with QF R &lt;FLID&gt; (left-click the view), by QF'ing the aircraft in CRC while CFR is open (needs the
+    /// vUSALink App or Lite, which reads CRC's QF readouts), or by middle-clicking a flight in INBND / DEPT /
+    /// IN SECTOR. Middle-click a FLID to delete it. Boxed * shows the rest of
     /// the route, boxed R the remarks. M menu: ENTRIES 1-10, RTE 30-100, FILTERS to show or hide columns.
     /// CID and the owning sector "(32)" come from the vUSALink EDST app, which learns them from CRC QF readouts.
     /// </summary>
@@ -123,17 +125,23 @@ namespace CrcCompanion.Ui
         // ---------- entries ----------
 
         /// <summary>QF R &lt;FLID&gt;: add (or "-FLID" to remove) flight plans.</summary>
-        private void OpenQf() =>
-            OpenEntry("QF R  FLID / -FLID", () => Settings.Items, text =>
-            {
-                var before = new HashSet<string>(Settings.Items, StringComparer.OrdinalIgnoreCase);
-                var feedback = Cfr.Apply(Settings.Items, text, Entries, cs => FindPlan(cs).Plan != null);
-                var now = DateTime.UtcNow;
-                foreach (var cs in Settings.Items) if (!before.Contains(cs) || text.ToUpperInvariant().Contains(cs)) _addedUtc[cs] = now;
-                if (_addedUtc.Count > 0) _greenTimer.Start();
-                Changed();
-                return feedback;
-            });
+        private void OpenQf() => OpenEntry("QF R  FLID / -FLID", () => Settings.Items, Add);
+
+        /// <summary>
+        /// Applies a QF entry ("QF R UAL123", "UAL123 DAL45", "-UAL123"). Used by the entry box, by QF readouts
+        /// from CRC (through the vUSALink app) and by middle-clicks in INBND / DEPT / IN SECTOR. Added flights
+        /// show their FLID in green. Returns feedback ("ADD UAL123", "NO FP UAL9").
+        /// </summary>
+        public string Add(string text)
+        {
+            var feedback = Cfr.Apply(Settings.Items, text, Entries, cs => FindPlan(cs).Plan != null);
+            var now = DateTime.UtcNow;
+            var named = new HashSet<string>(text.ToUpperInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries));
+            foreach (var cs in Settings.Items) if (named.Contains(cs.ToUpperInvariant())) _addedUtc[cs] = now;
+            if (_addedUtc.Count > 0) _greenTimer.Start();
+            Changed();
+            return feedback;
+        }
 
         private (Pilot? Pilot, FlightPlan? Plan) FindPlan(string cs)
         {

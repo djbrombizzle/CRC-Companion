@@ -21,6 +21,8 @@ namespace CrcCompanion.Ui
         void Recompute();
         /// <summary>A fix or airport's position, nearest your facility (for the INBND inbound fix), or null.</summary>
         LatLon? FixPosition(string id);
+        /// <summary>Adds a flight to the CFR view, opening it if it's hidden.</summary>
+        void AddToCfr(string callsign);
     }
 
     /// <summary>
@@ -233,7 +235,7 @@ namespace CrcCompanion.Ui
                     double boxY = top - 4, boxH = pitch;
                     if (_highlighted.Contains(i.Callsign)) p.Fill(Eram.Highlight, x0 + 1, boxY, width - 2, boxH);
                     var key = i.Callsign;
-                    p.Hit(x0, boxY, width, boxH, _ => ToggleHighlight(key));
+                    p.Hit(x0, boxY, width, boxH, b => { if (b == System.Windows.Input.MouseButton.Middle) _source.AddToCfr(key); else ToggleHighlight(key); });
 
                     p.Text(i.Callsign, tx, top, m, tb);
                     var alt = i.Filed.Length > AltChars ? i.Filed.Substring(0, AltChars) : i.Filed;
@@ -295,7 +297,7 @@ namespace CrcCompanion.Ui
                     if (key.Length > 0)
                     {
                         if (_highlighted.Contains(key)) p.Fill(Eram.Highlight, x0 + 1, boxY, width - 2, boxH);
-                        p.Hit(x0, boxY, width, boxH, _ => ToggleHighlight(key));
+                        p.Hit(x0, boxY, width, boxH, b => { if (b == System.Windows.Input.MouseButton.Middle) _source.AddToCfr(key); else ToggleHighlight(key); });
                     }
                     if (v == count - 1 && _scroll + count < lines.Count) text = text.PadRight(chars - 1).Substring(0, chars - 1) + ">";
                     p.Text(text, x0 + LeftPad, y0 + top + m.GlyphTopInRow, m, tb);

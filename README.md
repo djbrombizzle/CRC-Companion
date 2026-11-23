@@ -44,7 +44,7 @@ Fixes and FRDs are read from CRC's own `%LOCALAPPDATA%\CRC\NavData.dat`. Without
 
 Laid out like ERAM's CFR view (manual chapter 8): title bar with DEL ALL and SHOW FIELDS, then FLID TYP BCN SPD FIX TIM ALT RTE/RMK with a rule under each flight plan. The readouts update from VATSIM every poll.
 
-- **Add:** left-click the view to get the QF entry box and type `QF R UAL123` (or just `UAL123`; several at once; `-UAL123` removes). A new readout's FLID is green for 30 seconds. Past ENTRIES, the oldest drops off.
+- **Add:** with CFR open, QF the aircraft in CRC (middle-click its data block, or type QF) and it's added within a few seconds; this needs vUSALink App or Lite, which reads CRC's QF readouts. Or middle-click a flight in INBND, DEPT or IN SECTOR (CFR opens if hidden). Or left-click the view and type `QF R UAL123` (or just `UAL123`; several at once; `-UAL123` removes). A new readout's FLID is green for 30 seconds. Past ENTRIES, the oldest drops off.
 - **Delete:** middle-click a FLID, then DELETE. DEL ALL clears the view.
 - **Route:** ERAM dotted format (`SFO..SLC.J154.OCS..ORD`), cut at RTE characters. A boxed `*` shows the rest of the route, a boxed `R` the remarks.
 - **FIX / TIM:** on the ground or prefiled, the departure airport and proposed time (`P1530`). Airborne, the next fix ahead on the route (the first one inside your facility while still outside it) with an estimate from groundspeed (`E1615`).

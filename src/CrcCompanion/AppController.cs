@@ -33,6 +33,9 @@ namespace CrcCompanion
         private UaQueue _ua = new UaQueue();
         private readonly EdstCidBook _edstCids = new EdstCidBook();
         private DateTime _edstCidsChecked = DateTime.MinValue, _edstCidsStamp = DateTime.MinValue;
+        private readonly DispatcherTimer _qfTimer;
+        /// <summary>QFs after this go to CFR; null while CFR is hidden.</summary>
+        private DateTime? _qfSince;
         private readonly FcaWorld _fcaWorld;
         private List<FcaPilot> _fcaPilots = new List<FcaPilot>();
         private VatflowNav? _fcaNav;
@@ -91,23 +94,47 @@ namespace CrcCompanion
         /// </summary>
         public EdstCidBook.Entry? EdstCid(string callsign)
         {
-            var now = DateTime.UtcNow;
-            if (now - _edstCidsChecked > TimeSpan.FromSeconds(5))
-            {
-                _edstCidsChecked = now;
-                try
-                {
-                    var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "vUSALinkApp", "cids.json");
-                    var stamp = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
-                    if (stamp != _edstCidsStamp)
-                    {
-                        _edstCidsStamp = stamp;
-                        _edstCids.Replace(stamp == DateTime.MinValue ? new Dictionary<string, EdstCidBook.Entry>() : EdstCidBook.Parse(File.ReadAllText(path)));
-                    }
-                }
-                catch (Exception) { /* file being written: try again next time */ }
-            }
+            if (DateTime.UtcNow - _edstCidsChecked > TimeSpan.FromSeconds(5)) ReloadEdstCids();
             return _edstCids.Find(callsign);
+        }
+
+        /// <summary>Re-reads the vUSALink app's cids.json if it changed. A half-written file is retried next time.</summary>
+        private void ReloadEdstCids()
+        {
+            _edstCidsChecked = DateTime.UtcNow;
+            try
+            {
+                var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "vUSALinkApp", "cids.json");
+                var stamp = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
+                if (stamp == _edstCidsStamp) return;
+                _edstCids.Replace(stamp == DateTime.MinValue ? new Dictionary<string, EdstCidBook.Entry>() : EdstCidBook.Parse(File.ReadAllText(path)));
+                _edstCidsStamp = stamp;
+            }
+            catch (Exception) { /* being written: try again next tick */ }
+        }
+
+        /// <summary>
+        /// While CFR is open, every aircraft QF'd in CRC (typed, or a middle-click on its data block) is added to it,
+        /// as in ERAM. The vUSALink App or Lite reads CRC's QF readouts and renews the aircraft's time in cids.json;
+        /// this checks the file every second and adds what's newer than the last one seen.
+        /// </summary>
+        private void CheckQfs()
+        {
+            if (!(_grid.TryGetValue("CFR", out var v) && v.Settings.Visible && v is CfrView cfr)) { _qfSince = null; return; }
+            ReloadEdstCids();
+            if (_qfSince == null) { _qfSince = DateTime.UtcNow; return; }   // only QFs from now on
+            var fresh = _edstCids.QfSince(_qfSince.Value);
+            if (fresh.Count == 0) return;
+            _qfSince = fresh[^1].At;
+            cfr.Add(string.Join(" ", fresh.Select(e => e.Callsign)));
+        }
+
+        /// <summary>Middle-click in INBND / DEPT / IN SECTOR: the flight goes to CFR, which opens if hidden.</summary>
+        public void AddToCfr(string callsign)
+        {
+            if (!(_grid.TryGetValue("CFR", out var v) && v is CfrView cfr)) return;
+            if (!v.Settings.Visible) SetViewVisible(v, true);
+            cfr.Add(callsign);
         }
 
         // MRP (VATFLOW FCAs)
@@ -180,6 +207,11 @@ namespace CrcCompanion
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
             _clockTimer.Tick += (_, _) => { RefreshViews(); RefreshGrid(); };
             _clockTimer.Start();
+
+            // QF readouts from CRC (through the vUSALink app) go to CFR while it's open.
+            _qfTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _qfTimer.Tick += (_, _) => CheckQfs();
+            _qfTimer.Start();
 
             // vUSAlink hub (CPDLC views): read-only, polled only while a CPDLC view is open.
             // CRCCOMPANION_HUB_URL points at another hub (e.g. a local test hub); default is the shared KUSA hub.
@@ -736,6 +768,7 @@ namespace CrcCompanion
         public void Dispose()
         {
             _clockTimer.Stop();
+            _qfTimer.Stop();
             _saveTimer.Stop();
             Metar.Dispose();
             _live.Dispose();

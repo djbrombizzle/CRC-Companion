@@ -101,6 +101,19 @@ internal static class UaTests
         eq("sector", "32", e.Sector);
         check("verified", e.Verified, "");
         eq("not json array", 0, EdstCidBook.Parse("{}").Count);
+
+        // --- QF readouts (the app renews "at" on each QF) -> CFR ---
+        eq("QF time read as UTC", new DateTime(2026, 11, 22, 17, 0, 0, DateTimeKind.Utc), e.At);
+        var qfBook = new EdstCidBook();
+        qfBook.Replace(EdstCidBook.Parse(@"[
+            {""cid"":""101"",""callsign"":""AAL1"",""at"":""2026-11-22T17:00:00.0000000Z"",""lastSeen"":""2026-11-22T17:20:00Z""},
+            {""cid"":""102"",""callsign"":""DAL2"",""at"":""2026-11-22T17:05:00.0000000Z""},
+            {""cid"":""103"",""callsign"":""UAL3"",""at"":""2026-11-22T17:03:00.0000000Z""}]"));
+        var since = new DateTime(2026, 11, 22, 17, 1, 0, DateTimeKind.Utc);
+        eq("QFs after a time, oldest first", "UAL3,DAL2", string.Join(",", qfBook.QfSince(since).Select(x => x.Callsign)));
+        eq("lastSeen updates don't count as a QF", 0, qfBook.QfSince(new DateTime(2026, 11, 22, 17, 5, 0, DateTimeKind.Utc)).Count);
+        eq("latest QF", new DateTime(2026, 11, 22, 17, 5, 0, DateTimeKind.Utc), qfBook.LatestQf);
+        eq("missing time never counts", 0, EdstCidBook.Parse(@"[{""cid"":""1"",""callsign"":""X1""}]").Values.Count(x => x.At > DateTime.MinValue));
     }
 
     private static UaMessage M(string key, DateTime t) => new UaMessage { Key = key, Utc = t, Source = "GI", Text = key };

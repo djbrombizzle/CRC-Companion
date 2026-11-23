@@ -256,9 +256,11 @@ These are drawn like ERAM's Inbound and Departure List views (R-Position User Ma
 
 **Highlighting:** click a flight's line to highlight it, and click again to clear it.
 
+**Send to CFR:** middle-click a flight's line (here or in IN SECTOR) to add it to the CFR view ([section 9](#9-cfr-continuous-flight-plan-readout)). CFR opens if it's hidden.
+
 ### IN SECTOR
 
-Each strip is one line: `mark callsign type time/destination altitude beacon route`. M → **ROUTE** sets how much of the route shows. Flights working another local controller are hidden unless M → **OTHERS** is on.
+Each strip is one line: `mark callsign type time/destination altitude beacon route`. Click a strip to highlight it; middle-click it to add the flight to CFR. M → **ROUTE** sets how much of the route shows. Flights working another local controller are hidden unless M → **OTHERS** is on.
 
 The mark shows whose frequency the aircraft is tuned to, from VATSIM's voice data:
 
@@ -287,7 +289,9 @@ ERAM's Continuous Flight Plan Readout view (ERAM manual chapter 8). It keeps up 
 
 | To | Do this |
 |---|---|
-| Add | Left-click anywhere in the view. In the entry box type `QF R UAL123`, or just `UAL123`. Several at once work: `UAL123 DAL45`. |
+| Add from CRC | With CFR open, QF the aircraft in CRC: **middle-click its data block**, or type `QF UAL123`. It appears in CFR within a few seconds. Needs vUSALink App or vUSALink-Lite running (see below). |
+| Add from a list | **Middle-click** the flight in INBND, DEPT or IN SECTOR. CFR opens if it's hidden. |
+| Add by typing | Left-click anywhere in the view. In the entry box type `QF R UAL123`, or just `UAL123`. Several at once work: `UAL123 DAL45`. |
 | Remove one | Middle-click its FLID, then click **DELETE UAL123**. Or type `-UAL123` in the entry box. |
 | Remove all | **DEL ALL** in the title bar. |
 
@@ -295,6 +299,15 @@ ERAM's Continuous Flight Plan Readout view (ERAM manual chapter 8). It keeps up 
 - **Too many:** when you add more than ENTRIES allows, the oldest readout drops off.
 - **Already listed:** adding a flight that's already in the view moves it to the end.
 - **No flight plan:** a callsign with no flight plan on VATSIM is refused with `NO FP UAL123`.
+
+**QF from CRC: how it works.**
+- **ERAM behavior:** in ERAM, a QF with the CFR view open puts the readout in CFR. The companion does the same.
+- **No direct link to CRC:** the companion can't see clicks on CRC's scope.
+- **What the vUSALink app does:** vUSALink App and vUSALink-Lite catch each QF in CRC (a typed QF, or a middle-click on a data block), read the readout off CRC's screen, and record the aircraft in `cids.json`.
+- **What the companion does:** while CFR is open, it checks that file every second and adds each aircraft QF'd since CFR was opened. The CID and owning sector come with it.
+- **When CFR is hidden:** QFs aren't added.
+- **Delay:** expect 1–3 seconds while the app reads CRC's screen.
+- **When nothing is added:** if the app can't read a readout and match it to a real VATSIM flight, nothing is added; QF again or type the callsign. If the app can't read the new readout, it may pick up the readout already on screen instead, which only moves that flight to the end.
 
 ### Columns
 
@@ -603,6 +616,10 @@ The vUSALink app learns CRC's CIDs by reading the QF readouts CRC prints, for ex
 
 The app drops a CID when the pilot reconnects (CRC gives them a new one) or leaves VATSIM, so the companion doesn't keep showing an old CID. Without the app, the CID fields stay blank.
 
+### QF to CFR
+
+The same file tells the companion when you QF an aircraft in CRC. With CFR open, each aircraft you QF (middle-click its data block, or type QF) is added to CFR within a few seconds ([section 9](#9-cfr-continuous-flight-plan-readout)). Both vUSALink App and vUSALink-Lite do this; nothing needs to be set up.
+
 ### GI notes
 
 Notes sent with the EDST's **GI** button appear in the companion's UA view ([section 10](#10-ua-update-area)).
@@ -622,7 +639,7 @@ Notes sent with the EDST's **GI** button appear in the companion's UA view ([sec
 | Airport TMU (ground stops, restrictions, rates) | vatflow-hub (WebSocket) | Live, only while the UA view is open |
 | FCA programs | VATFLOW's FCA store | Every 20 s, only while MRP or UA is open |
 | MRP route data | vatflow.io | Weekly, cached |
-| CRC CIDs | vUSALink app's `cids.json` on your PC | When the file changes |
+| CRC CIDs, QFs for CFR | vUSALink app's `cids.json` on your PC | Every second while CFR is open, else when needed |
 
 **What the companion sends, and what it doesn't:**
 - **It never sends anything back.** It doesn't send CPDLC messages, change TMU state, change FCAs, or write to the vUSALink app's files.
