@@ -74,6 +74,7 @@ namespace CrcCompanion.Core
         public SelectorSettings Selector { get; set; } = new SelectorSettings();
         /// <summary>RECORD toolbar and its macros.</summary>
         public RecordSettings Record { get; set; } = new RecordSettings();
+        public CommandMenuSettings Commands { get; set; } = new CommandMenuSettings();
         public ViewSettings Altim { get; set; } = new ViewSettings { Lines = 24, Cols = 1 };
         public ViewSettings Wx { get; set; } = new ViewSettings { Lines = 5, Cols = 1 };
         public ViewSettings Inbound { get; set; } = new ViewSettings { Lines = 20, Tearoff = true };
@@ -229,6 +230,7 @@ namespace CrcCompanion.Core
             p.Selector ??= new SelectorSettings();
             p.Record ??= new RecordSettings();
             Macros.Sanitize(p.Record);
+            p.Commands ??= new CommandMenuSettings();
             p.Altim ??= new ViewSettings { Lines = 24 };
             p.Wx ??= new ViewSettings { Lines = 5 };
             p.Inbound ??= new ViewSettings { Lines = 20, Tearoff = false };

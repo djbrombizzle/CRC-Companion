@@ -44,6 +44,7 @@ namespace CrcCompanion
         private Profile _profile = new Profile();
         private ViewsSelectorWindow? _selector;
         private MacroManager? _macros;
+        private CommandMenusWindow? _commands;
         private AltimViewWindow? _altim;
         private WxViewWindow? _wx;
         private StripViewWindow? _inbound;
@@ -285,6 +286,11 @@ namespace CrcCompanion
             var (rx, ry) = Place(_profile.Record.X, _profile.Record.Y, wa.Left + 40, wa.Top + 40 + (int)(130 * UiScale));
             _macros.Show(rx, ry, Place);
 
+            _commands = new CommandMenusWindow(_profile.Commands, MarkDirty);
+            _commands.SetScale(UiScale);
+            var (cx, cy) = Place(_profile.Commands.X, _profile.Commands.Y, wa.Left + 40, wa.Top + 40 + (int)(190 * UiScale));
+            _commands.ShowAt(cx, cy);
+
             _altim = new AltimViewWindow(this, _profile.Altim);
             _wx = new WxViewWindow(this, _profile.Wx);
             _inbound = new StripViewWindow(this, _profile.Inbound, StripKind.Inbound, this);
@@ -357,7 +363,8 @@ namespace CrcCompanion
             foreach (var v in Views) v.CloseChildren();
             _macros?.Close();
             _macros = null;
-            foreach (var w in new Window?[] { _altim, _wx, _inbound, _inSector, _dept, _status, _selector }.Concat(_grid.Values)) w?.Close();
+            foreach (var w in new Window?[] { _altim, _wx, _inbound, _inSector, _dept, _status, _selector, _commands }.Concat(_grid.Values)) w?.Close();
+            _commands = null;
             _grid.Clear();
             _altim = null; _wx = null; _inbound = null; _inSector = null; _dept = null; _status = null; _selector = null;
         }
@@ -444,6 +451,7 @@ namespace CrcCompanion
             _profile.UiScale = scale;
             _selector?.SetScale(scale);
             _macros?.SetScale(scale);
+            _commands?.SetScale(scale);
             foreach (var v in Views) v.SetScale(scale);
             MarkDirty();
         }
@@ -452,6 +460,7 @@ namespace CrcCompanion
         {
             _profile.Selector.X = _profile.Selector.Y = null;
             _profile.Record.X = _profile.Record.Y = null;
+            _profile.Commands.X = _profile.Commands.Y = null;
             foreach (var s in new[] { _profile.Altim, _profile.Wx, _profile.Inbound, _profile.InSector, _profile.Dept, _profile.Status }.Concat(_profile.Extra.Values))
                 s.X = s.Y = null;
             SaveNow();

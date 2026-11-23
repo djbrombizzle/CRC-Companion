@@ -12,18 +12,19 @@ This manual covers every view and menu. For a short overview, see the [README](.
 4. [Profiles and your facility](#4-profiles-and-your-facility)
 5. [The VIEWS selector](#5-the-views-selector)
 6. [RECORD: macros](#6-record-macros)
-7. [Weather views: ALTIM SET and WX REPORT](#7-weather-views-altim-set-and-wx-report)
-8. [STATUS](#8-status)
-9. [Strip views: INBND, IN SECTOR and DEPT](#9-strip-views-inbnd-in-sector-and-dept)
-10. [CFR: Continuous Flight Plan Readout](#10-cfr-continuous-flight-plan-readout)
-11. [UA: Update Area](#11-ua-update-area)
-12. [MRP LIST: Meter Reference Point](#12-mrp-list-meter-reference-point)
-13. [CPDLC views](#13-cpdlc-views)
-14. [The other grid views](#14-the-other-grid-views)
-15. [Working with the vUSALink EDST app](#15-working-with-the-vusalink-edst-app)
-16. [Data sources and privacy](#16-data-sources-and-privacy)
-17. [Troubleshooting](#17-troubleshooting)
-18. [Reference](#18-reference)
+7. [COMMAND MENUS: range, bearing, fix and time](#7-command-menus-range-bearing-fix-and-time)
+8. [Weather views: ALTIM SET and WX REPORT](#8-weather-views-altim-set-and-wx-report)
+9. [STATUS](#9-status)
+10. [Strip views: INBND, IN SECTOR and DEPT](#10-strip-views-inbnd-in-sector-and-dept)
+11. [CFR: Continuous Flight Plan Readout](#11-cfr-continuous-flight-plan-readout)
+12. [UA: Update Area](#12-ua-update-area)
+13. [MRP LIST: Meter Reference Point](#13-mrp-list-meter-reference-point)
+14. [CPDLC views](#14-cpdlc-views)
+15. [The other grid views](#15-the-other-grid-views)
+16. [Working with the vUSALink EDST app](#16-working-with-the-vusalink-edst-app)
+17. [Data sources and privacy](#17-data-sources-and-privacy)
+18. [Troubleshooting](#18-troubleshooting)
+19. [Reference](#19-reference)
 
 ---
 
@@ -153,14 +154,14 @@ The **VIEWS** button opens a grid that copies CRC's ERAM VIEWS menu. Every butto
 
 | Button | Section |
 |---|---|
-| ALTIM SET, WX REPORT | [7](#7-weather-views-altim-set-and-wx-report) |
-| STATUS | [8](#8-status) |
-| INBND LIST, DEPT LIST | [9](#9-strip-views-inbnd-in-sector-and-dept) |
-| CFR | [10](#10-cfr-continuous-flight-plan-readout) |
-| UA | [11](#11-ua-update-area) |
-| MRP LIST | [12](#12-mrp-list-meter-reference-point) |
-| CPDLC ADV, CPDLC HIST, CPDLC MSGOUT, CPDLC TOC SET | [13](#13-cpdlc-views) |
-| AUTO HO INHIB, CODE, CONFLCT ALERT, CRR, FLIGHT EVENT, GROUP SUP, HOLD LIST, SAA FILTER | [14](#14-the-other-grid-views) |
+| ALTIM SET, WX REPORT | [8](#8-weather-views-altim-set-and-wx-report) |
+| STATUS | [9](#9-status) |
+| INBND LIST, DEPT LIST | [10](#10-strip-views-inbnd-in-sector-and-dept) |
+| CFR | [11](#11-cfr-continuous-flight-plan-readout) |
+| UA | [12](#12-ua-update-area) |
+| MRP LIST | [13](#13-mrp-list-meter-reference-point) |
+| CPDLC ADV, CPDLC HIST, CPDLC MSGOUT, CPDLC TOC SET | [14](#14-cpdlc-views) |
+| AUTO HO INHIB, CODE, CONFLCT ALERT, CRR, FLIGHT EVENT, GROUP SUP, HOLD LIST, SAA FILTER | [15](#15-the-other-grid-views) |
 
 A lit button means its view is shown. **IN SECTOR** is a companion extra with its own button in a row under the grid.
 
@@ -203,7 +204,7 @@ Click a macro button with the left or middle button. What happens next depends o
 1. The macro button lights up and waits up to 60 seconds for one flight. The line under the RECORD toolbar says what it's waiting for.
 2. Pick the flight in either of these ways:
    - **Middle-click it in INBND, DEPT or IN SECTOR.** This needs nothing else running. While a macro is waiting, the middle-click goes to the macro instead of CFR.
-   - **QF it in CRC**: type `QF AAL123`, or type `QF ` and click the track. This needs vUSALink App or vUSALink-Lite, which reads CRC's QF readout and tells the companion which flight it was ([section 15](#15-working-with-the-vusalink-edst-app)). A middle-click on a data block with the MCA empty isn't always a QF: on another sector's flight, CRC forces the data block instead.
+   - **QF it in CRC**: type `QF AAL123`, or type `QF ` and click the track. This needs vUSALink App or vUSALink-Lite, which reads CRC's QF readout and tells the companion which flight it was ([section 16](#16-working-with-the-vusalink-edst-app)). A middle-click on a data block with the MCA empty isn't always a QF: on another sector's flight, CRC forces the data block instead.
 
    A one-command macro needs neither: CRC adds the flight ID itself when you click the track. A macro with several commands has to type the flight ID into every line, so the companion must learn the flight first.
 3. Each command is typed into CRC with the flight ID and Enter, one after another.
@@ -240,7 +241,32 @@ Problems show in yellow under the RECORD toolbar, for example `NOT TYPED: CRC NO
 
 ---
 
-## 7. Weather views: ALTIM SET and WX REPORT
+## 7. COMMAND MENUS: range, bearing, fix and time
+
+The **COMMAND MENUS** button sits under RECORD and works like the Command Menus button on ERAM's Master Toolbar. CRC doesn't have this menu, so the companion adds it.
+
+Click **COMMAND MENUS** to open it, then **RNG BRG** to list the Range/Bearing/Fix/Time commands (ERAM manual 13.9). Click a command and the companion types its code into CRC's MCA, with no Enter. You then finish the entry in CRC, as if you'd typed the code yourself. The line under the button says what to do next.
+
+| Command | What it shows | Finish it in CRC by |
+|---|---|---|
+| **LA** Range/Bearing | Distance and magnetic bearing between two points. Starting on a track also gives its ground speed and flying time. | Clicking a track or point, then a second point. |
+| **LB** Range/Bearing/Fix | Distance and bearing between a fix and a point or track. | Typing the fix, then clicking a track or point. |
+| **LC** Fix/Time | The speed change that puts a track over a fix at a time. | Typing `fix/time` (e.g. `CRG/0155`), then clicking the track. |
+| **LD** Route Fix/Time | Times at each fix along the route. | Not available: CRC doesn't run LD. |
+| **LE** Route Fix/Time/Speed | Speed change along the route to a fix at a time. | Not available: CRC doesn't run LE. |
+
+LD and LE are dimmed in the menu. Clicking them only shows `NOT AVAILABLE IN CRC`.
+
+**Good to know**
+- **Speeds:** LA and LB take a speed for the flying time, as in ERAM. CRC's own documentation gives the exact forms.
+- **Ambiguous fixes:** CRC handles a duplicate fix ID itself; the companion only types the code.
+- **Function keys:** ERAM puts these commands on F1, F3, F5, F7 and F9. CRC already uses those keys for QF, QT, QZ, QL and QB, so the companion doesn't take them.
+- **Typing problems:** these show in yellow under the button, the same as for macros, for example `NOT TYPED: NO ERAM WINDOW`.
+- **Saving and resetting:** the button's position and whether it's open are saved in the profile. **Reset view positions** moves it back under RECORD.
+
+---
+
+## 8. Weather views: ALTIM SET and WX REPORT
 
 ### ALTIM SET (Altimeter Settings)
 
@@ -282,7 +308,7 @@ Scroll with the arrows, by clicking the track, or with the mouse wheel.
 
 ---
 
-## 8. STATUS
+## 9. STATUS
 
 ERAM's STATUS view, with text you control. It starts with the lines from an FAA Academy ERAM frame: `CH: B - ACTIVE`, `CA ON`, `MCI ON`, `WEATHER` and so on.
 
@@ -293,7 +319,7 @@ ERAM's STATUS view, with text you control. It starts with the lines from an FAA 
 
 ---
 
-## 9. Strip views: INBND, IN SECTOR and DEPT
+## 10. Strip views: INBND, IN SECTOR and DEPT
 
 These lists come from VATSIM's live data for your ARTCC and refresh every 15 seconds.
 
@@ -331,7 +357,7 @@ These are drawn like ERAM's Inbound and Departure List views (R-Position User Ma
 
 **Highlighting:** click a flight's line to highlight it, and click again to clear it.
 
-**Send to CFR:** middle-click a flight's line (here or in IN SECTOR) to add it to the CFR view ([section 10](#10-cfr-continuous-flight-plan-readout)). CFR opens if it's hidden.
+**Send to CFR:** middle-click a flight's line (here or in IN SECTOR) to add it to the CFR view ([section 11](#11-cfr-continuous-flight-plan-readout)). CFR opens if it's hidden.
 
 ### IN SECTOR
 
@@ -349,7 +375,7 @@ The mark shows whose frequency the aircraft is tuned to, from VATSIM's voice dat
 
 ---
 
-## 10. CFR: Continuous Flight Plan Readout
+## 11. CFR: Continuous Flight Plan Readout
 
 ERAM's Continuous Flight Plan Readout view (ERAM manual chapter 8). It keeps up to ten flight plans on screen, kept up to date from VATSIM.
 
@@ -388,7 +414,7 @@ ERAM's Continuous Flight Plan Readout view (ERAM manual chapter 8). It keeps up 
 
 | Column | Shows |
 |---|---|
-| **FLID** | `CID ACID(sector)`. The CID and owning sector come from the vUSALink EDST app ([section 15](#15-working-with-the-vusalink-edst-app)); without it, just the callsign. A coral **A** in front means the flight isn't ADS-B equipped: its ICAO equipment lists no ADS-B code (B1, B2, U1, U2, V1, V2). |
+| **FLID** | `CID ACID(sector)`. The CID and owning sector come from the vUSALink EDST app ([section 16](#16-working-with-the-vusalink-edst-app)); without it, just the callsign. A coral **A** in front means the flight isn't ADS-B equipped: its ICAO equipment lists no ADS-B code (B1, B2, U1, U2, V1, V2). |
 | **TYP** | Type and equipment suffix, `B738/L`. |
 | **BCN** | Assigned beacon code. |
 | **SPD** | Filed cruise speed (TAS). |
@@ -420,7 +446,7 @@ If a flight disconnects from VATSIM, its last readout stays on screen until you 
 
 ---
 
-## 11. UA: Update Area
+## 12. UA: Update Area
 
 ERAM's Update Area view (ERAM manual 6.3): a **Message Waiting Area** and a **text area** for messages you need to see and acknowledge.
 
@@ -469,7 +495,7 @@ In real ERAM the UA carries GI (General Information) messages sent by other posi
 
 ---
 
-## 12. MRP LIST: Meter Reference Point
+## 13. MRP LIST: Meter Reference Point
 
 ERAM's Meter Reference Point view (TI 6110.100 figures 4-220 to 4-224), built from [VATFLOW](https://vatflow.io)'s FCA (flow constrained area) programs.
 
@@ -516,7 +542,7 @@ The sequencing is a port of VATFLOW's own metering code, and it uses VATFLOW's r
 
 ---
 
-## 13. CPDLC views
+## 14. CPDLC views
 
 The four CPDLC buttons show the datalink traffic for your ARTCC from [vUSAlink](https://github.com/djbrombizzle/vUSAlink)'s shared hub.
 
@@ -582,11 +608,11 @@ Shows whether the hub link is up, and lists the aircraft logged on to CPDLC in y
 
 - **Matching replies:** the hub's feed has no message reference numbers, so a reply is matched to the oldest unanswered uplink to that aircraft.
 - **How much is kept:** the hub keeps its last 60 messages per ARTCC, and the companion keeps up to 500 while it runs.
-- **CID column:** filled when the vUSALink EDST app has learned the aircraft's CID ([section 15](#15-working-with-the-vusalink-edst-app)).
+- **CID column:** filled when the vUSALink EDST app has learned the aircraft's CID ([section 16](#16-working-with-the-vusalink-edst-app)).
 
 ---
 
-## 14. The other grid views
+## 15. The other grid views
 
 Each has the usual M menu (O/T, BORDER, LINES, FONT, BRIGHT) plus the rows listed. Typed entries use the entry box: `A B -C`.
 
@@ -669,7 +695,7 @@ Fix names and fix-radial-distance entries (`BOS090010`) are resolved from CRC's 
 
 ---
 
-## 15. Working with the vUSALink EDST app
+## 16. Working with the vUSALink EDST app
 
 [vUSALink App and vUSALink-Lite](https://github.com/djbrombizzle/vUSALink-App) connect the vUSAlink EDST to CRC. Two of their features also feed the companion.
 
@@ -693,15 +719,15 @@ The app drops a CID when the pilot reconnects (CRC gives them a new one) or leav
 
 ### QF to CFR
 
-The same file tells the companion when you QF an aircraft in CRC. With CFR open, each aircraft you QF (middle-click its data block, or type QF) is added to CFR within a few seconds ([section 10](#10-cfr-continuous-flight-plan-readout)). Both vUSALink App and vUSALink-Lite do this; nothing needs to be set up.
+The same file tells the companion when you QF an aircraft in CRC. With CFR open, each aircraft you QF (middle-click its data block, or type QF) is added to CFR within a few seconds ([section 11](#11-cfr-continuous-flight-plan-readout)). Both vUSALink App and vUSALink-Lite do this; nothing needs to be set up.
 
 ### GI notes
 
-Notes sent with the EDST's **GI** button appear in the companion's UA view ([section 11](#11-ua-update-area)).
+Notes sent with the EDST's **GI** button appear in the companion's UA view ([section 12](#12-ua-update-area)).
 
 ---
 
-## 16. Data sources and privacy
+## 17. Data sources and privacy
 
 | Data | Source | When it's read |
 |---|---|---|
@@ -724,7 +750,7 @@ Notes sent with the EDST's **GI** button appear in the companion's UA view ([sec
 
 ---
 
-## 17. Troubleshooting
+## 18. Troubleshooting
 
 | Problem | What to check |
 |---|---|
@@ -737,14 +763,14 @@ Notes sent with the EDST's **GI** button appear in the companion's UA view ([sec
 | UA says `VATFLOW TMU DOWN` | vatflow-hub isn't answering. The companion reconnects on its own. |
 | MRP says `LOADING VATFLOW` for a long time | The first open downloads about 5 MB of route data. Check your internet connection. |
 | MRP is empty | Your ARTCC has no FCA enabled in VATFLOW. Turn off M → **ACTIVE** to see disabled ones. |
-| CFR or CPDLC CIDs are blank | Run the vUSALink app and QF the aircraft in CRC ([section 15](#15-working-with-the-vusalink-edst-app)). |
+| CFR or CPDLC CIDs are blank | Run the vUSALink app and QF the aircraft in CRC ([section 16](#16-working-with-the-vusalink-edst-app)). |
 | A macro says `NOT TYPED` | CRC isn't running, has no ERAM window open, or wouldn't come to the front. If CRC runs as administrator, run the companion as administrator too. |
 | Typing goes to the wrong window | Clicking a view never takes the keyboard. Only an open entry box or edit field does. Press Esc to hand the keyboard back to CRC. |
 | Something crashed | Errors are logged to `%APPDATA%\CRCCompanion\error.log`. |
 
 ---
 
-## 18. Reference
+## 19. Reference
 
 ### Number ranges
 

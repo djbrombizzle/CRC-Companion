@@ -170,6 +170,7 @@ internal static class Program
         CfrTests.Run(Check, (n, e, a) => Check(n, Equals(e, a), $"expected [{e}] got [{a}]"));
         UaTests.Run(Check, (n, e, a) => Check(n, Equals(e, a), $"expected [{e}] got [{a}]"));
         MacroTests.Run(Check, (n, e, a) => Check(n, Equals(e, a), $"expected [{e}] got [{a}]"));
+        CommandMenuTests.Run(Check, (n, e, a) => Check(n, Equals(e, a), $"expected [{e}] got [{a}]"));
         FcaTests.Run(Check, (n, e, a) => Check(n, Equals(e, a), $"expected [{e}] got [{a}]"));
 
         Console.WriteLine($"\n{_pass} passed, {_fail} failed");

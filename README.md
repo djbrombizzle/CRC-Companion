@@ -48,6 +48,12 @@ ERAM's RECORD toolbar, under the VIEWS selector. See [the manual](docs/MANUAL.md
 - **Using one:** a one-command macro is typed into CRC's MCA, and you click the track in CRC to add the flight ID. A macro with several commands waits for one flight, picked by a QF in CRC (needs vUSALink App or Lite) or a middle-click in INBND, DEPT or IN SECTOR. Each command is then typed with the flight ID.
 - **Typing into CRC:** uses the vUSALink app's CRC echo method: SendInput into CRC's ERAM window only, once it's in front.
 
+## COMMAND MENUS (RNG BRG)
+
+ERAM's Command Menus button, under RECORD. See [the manual](docs/MANUAL.md#7-command-menus-range-bearing-fix-and-time).
+- **RNG BRG** lists LA, LB, LC, LD and LE. Picking LA, LB or LC types the code into CRC's MCA, and you finish the entry in CRC.
+- LD and LE are dimmed: CRC doesn't run them.
+
 ## CFR (Continuous Flight Plan Readout)
 
 Laid out like ERAM's CFR view (manual chapter 8): title bar with DEL ALL and SHOW FIELDS, then FLID TYP BCN SPD FIX TIM ALT RTE/RMK with a rule under each flight plan. The readouts update from VATSIM every poll.
