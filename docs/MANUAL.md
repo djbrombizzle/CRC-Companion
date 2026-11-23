@@ -49,7 +49,7 @@ A new build is published automatically every time the project changes, under the
 
 ### First run
 
-1. The app starts with the **VIEWS** button on screen and a tray icon near the clock.
+1. The app starts with a tray icon near the clock and four buttons on screen, one under the other: **VIEWS**, **RECORD** (macros, [section 6](#6-record-macros)), **COMMAND MENUS** ([section 7](#7-command-menus-range-bearing-fix-and-time)) and **DRAW** ([section 8](#8-draw-annotations)).
 2. Right-click the tray icon and choose **Set VATSIM CID...**. Enter your VATSIM CID. The app uses it only to find your controller position in VATSIM's public data, so it knows which ARTCC you're working.
 3. Click **VIEWS** to open the selector grid. Each button opens or closes a view.
 4. Move each view where you want it: click its title bar, move the mouse, and click again to drop it.
@@ -68,7 +68,7 @@ The views copy CRC's ERAM look and mouse conventions.
 | To | Do this |
 |---|---|
 | Move a view or a menu | Click its title, move the mouse, click again to place it. Esc or a right-click cancels. |
-| Move the VIEWS button | Click the olive bar on the VIEWS button, move, click again. |
+| Move the VIEWS, RECORD, COMMAND MENUS or DRAW button, or a macro button | Click the olive bar at its left, move, click again. |
 | Hide a view | Click the **-** at the right of its title bar, or click its button in the VIEWS selector. |
 | Put every view back on screen | Tray menu → **Reset view positions**. |
 
@@ -117,7 +117,7 @@ Right-click the companion's tray icon (near the clock):
 | **New profile...** / **Duplicate current...** / **Rename current...** / **Delete current** | Manage profiles. |
 | **Size** | An extra scale on top of Windows display scaling (75% to 250%), so the views can match CRC's size exactly. Saved with the profile. |
 | **Weather source** | **Real world (aviationweather.gov)**, the default, or **VATSIM (metar.vatsim.net)**. |
-| **Reset view positions** | Moves every view back to a default spot on screen. |
+| **Reset view positions** | Moves every view, and the VIEWS, RECORD, COMMAND MENUS and DRAW buttons, back to a default spot on screen. Macro buttons and DRAW annotations stay where they are. |
 | **Open profiles folder** | Opens the folder holding your profiles, for backup or sharing. |
 | **Exit** | Closes the companion. |
 
@@ -131,7 +131,9 @@ A profile saves everything:
 - which views are shown and where;
 - every menu setting;
 - station lists, sublists and entries;
-- the VIEWS selector's position.
+- the positions of the VIEWS, RECORD, COMMAND MENUS and DRAW buttons;
+- your macros and where their buttons are;
+- your DRAW annotations and DRAW settings (color, brightness, A FONT).
 
 Changes save automatically a moment after you make them.
 
@@ -188,7 +190,7 @@ Click **RECORD** to open or close its toolbar:
 3. Press **Enter** to start the next command, up to six. The arrow keys, Backspace and Delete edit the lines.
 4. Click **SAVE MSG**. The MSG button turns into a blank button with a cursor.
 5. Type a label of up to seven characters and press **Enter**. With no label, the first six characters of the commands are used.
-6. The new macro button now sits where MSG was. Click its gold tear-off bar, move the mouse, and click to place it. MSG comes back once the macro has been moved, and you have to move it before you can record another one.
+6. The new macro button now sits where MSG was: cyan, with its label in white at the top. Click its gold tear-off bar, move the mouse, and click to place it. MSG comes back once the macro has been moved, and you have to move it before you can record another one.
 
 Press **Esc** (ERAM's CLEAR), or click anywhere outside the toolbar, to cancel recording. Nothing is saved.
 
@@ -451,7 +453,7 @@ ERAM's Continuous Flight Plan Readout view (ERAM manual chapter 8). It keeps up 
 
 | To | Do this |
 |---|---|
-| Add from CRC | With CFR open, QF the aircraft in CRC: **middle-click its data block**, or type `QF UAL123`. It appears in CFR within a few seconds. Needs vUSALink App or vUSALink-Lite running (see below). |
+| Add from CRC | With CFR open, QF the aircraft in CRC: type `QF UAL123`, or type `QF ` and click the track. It appears in CFR within a few seconds. Needs vUSALink App or vUSALink-Lite running (see below). A middle-click on a data block with the MCA empty isn't always a QF: on another sector's flight, CRC forces the data block instead. |
 | Add from a list | **Middle-click** the flight in INBND, DEPT or IN SECTOR. CFR opens if it's hidden. |
 | Add by typing | Left-click anywhere in the view. In the entry box type `QF R UAL123`, or just `UAL123`. Several at once work: `UAL123 DAL45`. A CRC CID works too (`QF R 151`) once vUSALink App or Lite has seen that aircraft's QF in CRC; otherwise it says `NO FP`. |
 | Remove one | Middle-click its FLID, then click **DELETE UAL123**. Or type `-UAL123` in the entry box. |
@@ -773,14 +775,14 @@ The vUSALink app learns CRC's CIDs by reading the QF readouts CRC prints, for ex
 
 **To get CIDs showing:**
 1. Run vUSALink App or vUSALink-Lite alongside CRC.
-2. QF the aircraft in CRC: middle-click its data block, or type `QF SKW5646`.
+2. QF the aircraft in CRC: type `QF SKW5646`, or type `QF ` and click the track.
 3. Within a few seconds the CID appears in the companion.
 
 The app drops a CID when the pilot reconnects (CRC gives them a new one) or leaves VATSIM, so the companion doesn't keep showing an old CID. Without the app, the CID fields stay blank.
 
 ### QF to CFR
 
-The same file tells the companion when you QF an aircraft in CRC. With CFR open, each aircraft you QF (middle-click its data block, or type QF) is added to CFR within a few seconds ([section 12](#12-cfr-continuous-flight-plan-readout)). Both vUSALink App and vUSALink-Lite do this; nothing needs to be set up.
+The same file tells the companion when you QF an aircraft in CRC. With CFR open, each aircraft you QF (type `QF` and the callsign, or `QF ` and click the track) is added to CFR within a few seconds ([section 12](#12-cfr-continuous-flight-plan-readout)). Both vUSALink App and vUSALink-Lite do this; nothing needs to be set up.
 
 ### GI notes
 
@@ -805,7 +807,8 @@ Notes sent with the EDST's **GI** button appear in the companion's UA view ([sec
 
 **What the companion sends, and what it doesn't:**
 - **It never sends anything back.** It doesn't send CPDLC messages, change TMU state, change FCAs, or write to the vUSALink app's files.
-- **Macros type into CRC only.** A macro you click types its commands into CRC's MCA on your PC. Nothing goes over the network.
+- **Macros and COMMAND MENUS type into CRC only.** They type into CRC's MCA on your PC. Nothing goes over the network.
+- **DRAW stays on your screen.** Annotations are drawn by the companion over CRC; CRC and other controllers don't see them.
 - **Your CID stays on your PC.** It's only used to find you in the public VATSIM data.
 - **Service requests carry only your airspace,** for example `KZDC`.
 
@@ -825,7 +828,9 @@ Notes sent with the EDST's **GI** button appear in the companion's UA view ([sec
 | MRP says `LOADING VATFLOW` for a long time | The first open downloads about 5 MB of route data. Check your internet connection. |
 | MRP is empty | Your ARTCC has no FCA enabled in VATFLOW. Turn off M → **ACTIVE** to see disabled ones. |
 | CFR or CPDLC CIDs are blank | Run the vUSALink app and QF the aircraft in CRC ([section 17](#17-working-with-the-vusalink-edst-app)). |
-| A macro says `NOT TYPED` | CRC isn't running, has no ERAM window open, or wouldn't come to the front. If CRC runs as administrator, run the companion as administrator too. |
+| A macro or COMMAND MENUS says `NOT TYPED` | CRC isn't running, has no ERAM window open, or wouldn't come to the front. If CRC runs as administrator, run the companion as administrator too. |
+| Clicks don't reach CRC | A DRAW button (rectangle, circle, line, A) is active, or you're moving an annotation: anchor it or press Esc. With the DRAW toolbar open, a click right on an annotation's line or text stays with the companion; close DRAW. |
+| Annotations no longer line up with the map | DRAW anchors to the display, not the map, so annotations don't follow CRC's pans and zooms ([section 8](#8-draw-annotations)). Move them by their D handle. |
 | Typing goes to the wrong window | Clicking a view never takes the keyboard. Only an open entry box or edit field does. Press Esc to hand the keyboard back to CRC. |
 | Something crashed | Errors are logged to `%APPDATA%\CRCCompanion\error.log`. |
 
@@ -846,6 +851,10 @@ Notes sent with the EDST's **GI** button appear in the companion's UA view ([sec
 | NM (CONFLCT ALERT) | 3–10 |
 | ENTRIES (CFR) | 1–10 |
 | RTE (CFR) | 30–100 |
+| Macros | up to 99; 6 commands when recording, 25 when editing; labels up to 7 characters |
+| DRAW annotations | up to 200; lines up to 29 segments; text 20 characters by 5 lines |
+| A FONT (DRAW) | 1–8 (default 2) |
+| COLOR (DRAW) | 0–100, steps of 2 (default 60) |
 
 ### Files and folders
 

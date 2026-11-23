@@ -47,6 +47,7 @@ ERAM's RECORD toolbar, under the VIEWS selector. See [the manual](docs/MANUAL.md
 - **MACRO EDIT** edits a macro's commands (up to 25 lines) and label. **MACRO DELETE** deletes: left-click to mark with an X, then middle-click to delete. **CLR ALL MACROS** needs two clicks (burnt orange in between).
 - **Using one:** a one-command macro is typed into CRC's MCA, and you click the track in CRC to add the flight ID. A macro with several commands waits for one flight, picked by a QF in CRC (needs vUSALink App or Lite) or a middle-click in INBND, DEPT or IN SECTOR. Each command is then typed with the flight ID.
 - **Typing into CRC:** uses the vUSALink app's CRC echo method: SendInput into CRC's ERAM window only, once it's in front.
+- **Buttons:** saved macros are cyan with a white Verdana Bold label at the top, as on ERAM's display.
 
 ## COMMAND MENUS (RNG BRG)
 
@@ -65,7 +66,7 @@ ERAM's Draw toolbar, under COMMAND MENUS. See [the manual](docs/MANUAL.md#8-draw
 
 Laid out like ERAM's CFR view (manual chapter 8): title bar with DEL ALL and SHOW FIELDS, then FLID TYP BCN SPD FIX TIM ALT RTE/RMK with a rule under each flight plan. The readouts update from VATSIM every poll.
 
-- **Add:** with CFR open, QF the aircraft in CRC (middle-click its data block, or type QF) and it's added within a few seconds; this needs vUSALink App or Lite, which reads CRC's QF readouts. Or middle-click a flight in INBND, DEPT or IN SECTOR (CFR opens if hidden). Or left-click the view and type `QF R UAL123` (or just `UAL123`; several at once; `-UAL123` removes). A new readout's FLID is green for 30 seconds. Past ENTRIES, the oldest drops off.
+- **Add:** with CFR open, QF the aircraft in CRC (type `QF UAL123`, or `QF ` and click the track) and it's added within a few seconds; this needs vUSALink App or Lite, which reads CRC's QF readouts. Or middle-click a flight in INBND, DEPT or IN SECTOR (CFR opens if hidden). Or left-click the view and type `QF R UAL123` (or just `UAL123`; several at once; `-UAL123` removes). A CRC CID works too (`QF R 151`) once the vUSALink app has seen that aircraft's QF. A new readout's FLID is green for 30 seconds. Past ENTRIES, the oldest drops off.
 - **Delete:** middle-click a FLID, then DELETE. DEL ALL clears the view.
 - **Route:** ERAM dotted format (`SFO..SLC.J154.OCS..ORD`), cut at RTE characters. A boxed `*` shows the rest of the route, a boxed `R` the remarks.
 - **FIX / TIM:** on the ground or prefiled, the departure airport and proposed time (`P1530`). Airborne, the next fix ahead on the route (the first one inside your facility while still outside it) with an estimate from groundspeed (`E1615`).
@@ -178,7 +179,7 @@ Clicking a view never takes the keyboard away from CRC. The station entry box ta
 
 ## Profiles
 
-Right-click the tray icon to switch, create, duplicate, rename or delete profiles. A profile saves everything: station lists, view positions, which views are shown, every menu setting and the selector position. Changes save automatically.
+Right-click the tray icon to switch, create, duplicate, rename or delete profiles. A profile saves everything: station lists, view positions, which views are shown, every menu setting, the VIEWS, RECORD, COMMAND MENUS and DRAW button positions, macros and DRAW annotations. Changes save automatically.
 
 Profiles are stored in `%APPDATA%\CRCCompanion\profiles\NAME.json`. The tray menu's **Open profiles folder** opens it, so profiles can be backed up or shared.
 
