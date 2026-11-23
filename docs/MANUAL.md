@@ -497,7 +497,8 @@ ERAM's Continuous Flight Plan Readout view (ERAM manual chapter 8). It keeps up 
 - **What the companion does:** while CFR is open, it checks that file every second and adds each aircraft QF'd since CFR was opened. The CID and owning sector come with it.
 - **When CFR is hidden:** QFs aren't added.
 - **Delay:** expect 1–3 seconds while the app reads CRC's screen.
-- **When nothing is added:** if the app can't read a readout and match it to a real VATSIM flight, nothing is added; QF again or type the callsign. If the app can't read the new readout, it may pick up the readout already on screen instead, which only moves that flight to the end.
+- **Misread callsigns:** the app sometimes misreads a callsign off CRC's screen, for example `CIALI183` for `UAL1183`. The companion matches such a misread to the one live flight it can only stand for, folding together characters that look alike (U and CI, 1 and I or L, 0 and O, 5 and S, 8 and B, 2 and Z, 6 and G). The flight is then added with its CID. Macros waiting for a QF use the corrected flight too.
+- **When nothing is added:** if the readout can't be matched to exactly one real VATSIM flight, nothing is added; QF again or type the callsign. If the app can't read the new readout, it may pick up the readout already on screen instead, which only moves that flight to the end.
 
 ### Columns
 

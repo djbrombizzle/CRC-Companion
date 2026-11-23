@@ -114,6 +114,29 @@ internal static class UaTests
         eq("lastSeen updates don't count as a QF", 0, qfBook.QfSince(new DateTime(2026, 11, 22, 17, 5, 0, DateTimeKind.Utc)).Count);
         eq("latest QF", new DateTime(2026, 11, 22, 17, 5, 0, DateTimeKind.Utc), qfBook.LatestQf);
         eq("missing time never counts", 0, EdstCidBook.Parse(@"[{""cid"":""1"",""callsign"":""X1""}]").Values.Count(x => x.At > DateTime.MinValue));
+
+        // Callsigns the vUSALink app misread off CRC's screen
+        var live = new[] { "UAL1183", "AAL500", "EDV5063", "SWA676", "DAL1309" };
+        eq("CIALI183 is UAL1183", "UAL1183", OcrMatch.Find("CIALI183", live));
+        eq("O read for 0", "AAL500", OcrMatch.Find("AALS0O", live));
+        eq("no match", null, OcrMatch.Find("XYZ999", live));
+        eq("two matches: none", null, OcrMatch.Find("AB10", new[] { "AB10", "ABIO" }));
+        eq("too short", null, OcrMatch.Find("U1", live));
+        var mis = new EdstCidBook();
+        mis.Replace(EdstCidBook.Parse(@"[
+            {""cid"":""990"",""callsign"":""CIALI183"",""sector"":""31"",""verified"":false,""at"":""2026-11-23T22:38:08Z""},
+            {""cid"":""685"",""callsign"":""EDV5063"",""sector"":""31"",""verified"":true,""at"":""2026-11-23T22:37:52Z""},
+            {""cid"":""164"",""callsign"":""SWA676"",""verified"":false,""at"":""2026-11-23T22:30:00Z""},
+            {""cid"":""537"",""callsign"":""QQQ999"",""verified"":false,""at"":""2026-11-23T22:31:00Z""}]"));
+        mis.ConfirmWith(live);
+        var fixedEntry = mis.Find("UAL1183");
+        eq("misread filed under the real callsign", "990", fixedEntry?.Cid);
+        check("misread confirmed", fixedEntry?.Usable == true, "should be usable");
+        eq("misread name gone", null, mis.Find("CIALI183"));
+        check("live but unverified is confirmed", mis.Find("SWA676")?.Usable == true, "SWA676 should be usable");
+        check("unknown stays unusable", mis.Find("QQQ999")?.Usable == false, "QQQ999 should stay unverified");
+        eq("corrected QF keeps its time", "SWA676,QQQ999,EDV5063,UAL1183",
+            string.Join(",", mis.QfSince(new DateTime(2026, 11, 23, 22, 0, 0, DateTimeKind.Utc)).Select(x => x.Callsign)));
     }
 
     private static UaMessage M(string key, DateTime t) => new UaMessage { Key = key, Utc = t, Source = "GI", Text = key };

@@ -119,6 +119,10 @@ namespace CrcCompanion
                 var stamp = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
                 if (stamp == _edstCidsStamp) return;
                 _edstCids.Replace(stamp == DateTime.MinValue ? new Dictionary<string, EdstCidBook.Entry>() : EdstCidBook.Parse(File.ReadAllText(path)));
+                // The app sometimes misreads a callsign off CRC's screen (CIALI183 for UAL1183): match those to real flights.
+                var snap = _live.Snapshot;
+                if (snap != null)
+                    _edstCids.ConfirmWith(snap.Pilots.Select(p => p.Callsign).Concat(snap.Prefiles.Select(p => p.Callsign)).ToList());
                 _edstCidsStamp = stamp;
             }
             catch (Exception) { /* being written: try again next tick */ }

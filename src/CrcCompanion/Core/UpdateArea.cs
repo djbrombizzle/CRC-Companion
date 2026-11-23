@@ -364,6 +364,13 @@ namespace CrcCompanion.Core
             /// <summary>Owning sector from the QF ("32"), or "".</summary>
             public string Sector { get; init; } = "";
             public bool Verified { get; init; }
+            /// <summary>
+            /// The companion matched it to a real flight itself: the app couldn't verify it, but the callsign is a live
+            /// flight, or a misread of exactly one (see <see cref="OcrMatch"/>).
+            /// </summary>
+            public bool Confirmed { get; init; }
+            /// <summary>Safe to act on: verified by the app or confirmed by the companion.</summary>
+            public bool Usable => Verified || Confirmed;
             /// <summary>When the app read this aircraft's QF readout (UTC). Every QF, even a repeat, renews it.</summary>
             public DateTime At { get; init; }
         }
@@ -412,6 +419,28 @@ namespace CrcCompanion.Core
         }
 
         public void Replace(Dictionary<string, Entry> map) => _byCallsign = map;
+
+        /// <summary>
+        /// Checks the readouts the app couldn't verify against the live flights: a live callsign is confirmed as is,
+        /// and a misread of exactly one live callsign (CIALI183 for UAL1183) is filed under the real one, keeping its
+        /// CID, sector and time. Anything else stays unverified.
+        /// </summary>
+        public void ConfirmWith(IReadOnlyCollection<string> live)
+        {
+            if (live.Count == 0) return;
+            var liveSet = new HashSet<string>(live, StringComparer.OrdinalIgnoreCase);
+            foreach (var e in _byCallsign.Values.Where(x => !x.Verified && !x.Confirmed).ToList())
+            {
+                string? real = liveSet.Contains(e.Callsign) ? e.Callsign : OcrMatch.Find(e.Callsign, live);
+                if (real == null) continue;
+                real = real.ToUpperInvariant();
+                // A newer readout already filed under the real callsign wins.
+                if (!string.Equals(real, e.Callsign, StringComparison.OrdinalIgnoreCase)
+                    && _byCallsign.TryGetValue(real, out var existing) && existing.At >= e.At) { _byCallsign.Remove(e.Callsign); continue; }
+                _byCallsign.Remove(e.Callsign);
+                _byCallsign[real] = new Entry { Cid = e.Cid, Callsign = real, Sector = e.Sector, Verified = false, Confirmed = true, At = e.At };
+            }
+        }
 
         /// <summary>
         /// Aircraft QF'd in CRC after <paramref name="since"/>, oldest first: the app renews a pair's time on every

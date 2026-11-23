@@ -783,7 +783,7 @@ namespace CrcCompanion.Ui
         public void CheckQfs(EdstCidBook book)
         {
             if (_armed == null) return;
-            var qf = book.QfSince(_armedAt).FirstOrDefault(e => e.Verified);
+            var qf = book.QfSince(_armedAt).FirstOrDefault(e => e.Usable);
             if (qf != null) Apply(_armed, qf.Callsign);
         }
 
